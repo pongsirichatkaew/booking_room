@@ -22,7 +22,7 @@ def login(cursor):
                     raw = response.text
                     raw = json.loads(raw)
                     print(raw)
-                    return jsonify({"result": raw})
+                    return jsonify({"message": raw})
                 else:
                     return jsonify({"message": "error"}), 401
     except Exception as e:
@@ -38,7 +38,7 @@ def get_all_rooms(cursor):
         cursor.execute(sql,)
         columns = [column[0] for column in cursor.description]
         result = toJson(cursor.fetchall(), columns)
-        return jsonify({"result": result})
+        return jsonify({"message": result})
     except Exception as e:
         print('error ===', e)
         current_app.logger.info(e)
@@ -68,7 +68,7 @@ def get_ticket_room(cursor):
                 cursor.execute(sql, (date,))
                 columns = [column[0] for column in cursor.description]
                 result = toJson(cursor.fetchall(), columns)
-                return jsonify(result)
+                return jsonify({"message":result})
             elif room_id and date:
                 print('date_some_room', date)
                 print('date_some_room', type(room_id))
@@ -82,7 +82,7 @@ def get_ticket_room(cursor):
                 cursor.execute(sql, (date, room_id,))
                 columns = [column[0] for column in cursor.description]
                 result = toJson(cursor.fetchall(), columns)
-                return jsonify(result)
+                return jsonify({"message":result})
     except Exception as e:
         current_app.logger.info(e)
         return jsonify({"message": str(e)}), 500
@@ -168,7 +168,7 @@ def get_available_ticket_room(cursor):
                     arr_room.append(jsonResult)
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
-                return jsonify({"result": arr_room})
+                return jsonify({"message": arr_room})
             elif not room_id and date:
                 room_sql = """SELECT rid,rname FROM room  WHERE category = 'room' AND rstatus='show' """
                 cursor.execute(room_sql, )
@@ -237,7 +237,7 @@ def get_available_ticket_room(cursor):
                     arr_room.append(jsonResult)
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
-                return jsonify({"result": arr_room})
+                return jsonify({"message": arr_room})
             elif room_id and date:
                 sql_room_id = """SELECT rname FROM `room` WHERE rid = %s and category = 'room' AND rstatus='show'"""
                 cursor.execute(sql_room_id, (room_id,))
@@ -308,7 +308,7 @@ def get_available_ticket_room(cursor):
                     # print('json', jsonResult)
                     jsonResult.update({"times": list_time})
                     # jsonResult.update({"times": list(my_time)})
-                    return jsonify({"result": jsonResult})
+                    return jsonify({"message": jsonResult})
                 else:
                     return jsonify({"message": "room_id is invalid"}), 400
     except Exception as e:
@@ -405,7 +405,7 @@ def get_available_vehicle_room(cursor):
 
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
-                return jsonify({"result": arr_room})
+                return jsonify({"message": arr_room})
             elif vehicle_id and date:
                 sql_vehicle_id = """SELECT rname FROM `room` WHERE rid = %s and category = 'vehicle' AND rstatus='show'"""
                 cursor.execute(sql_vehicle_id, (vehicle_id,))
@@ -478,7 +478,7 @@ def get_available_vehicle_room(cursor):
                     print('mytimelist', list(my_time))
                     print('listtime', list_time)
                     # jsonResult.update({"times": list(my_time)})
-                    return jsonify({"result": jsonResult})
+                    return jsonify({"message": jsonResult})
                 else:
                     return jsonify({"message": "room_id is invalid"}), 400
     except Exception as e:
@@ -567,7 +567,7 @@ def get_available_projector(cursor):
                     arr_room.append(jsonResult)
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
-                return jsonify({"result": arr_room})
+                return jsonify({"message": arr_room})
             elif projector_id and date:
                 sql_projector_id = """SELECT pname FROM projector WHERE pid = %s AND pstatus='show'"""
                 cursor.execute(sql_projector_id, (projector_id,))
@@ -637,7 +637,7 @@ def get_available_projector(cursor):
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
                     # jsonResult.update({"times": list(my_time)})
-                    return jsonify({"result": jsonResult})
+                    return jsonify({"message": jsonResult})
                 else:
                     return jsonify({"message": "pid is invalid"}), 400
     except Exception as e:
@@ -673,7 +673,7 @@ def post_available_projector(cursor):
                 raw = response.text
                 raw = json.loads(raw)
                 if raw['status'] == "fail":
-                    print(raw['status'])
+                    print(raw['status'])    
                     return jsonify({"message": raw}), 401
                 else:
                     for r in row:
@@ -682,9 +682,7 @@ def post_available_projector(cursor):
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
                         cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
                                                 department, email, description, numberofpeople, ps, date))
-                    # columns = [column[0] for column in cursor.description]
-                    # result = toJson(cursor.fetchall(), columns)
-                return jsonify({"result": "Insert Success"})
+                return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
     except Exception as e:
@@ -707,7 +705,7 @@ def get_all_room_with_time(cursor):
         cursor.execute(sql,)
         columns = [column[0] for column in cursor.description]
         result = toJson(cursor.fetchall(), columns)
-        return jsonify(result)
+        return jsonify({"message":result})
     except Exception as e:
         print('error ===', e)
         current_app.logger.info(e)
