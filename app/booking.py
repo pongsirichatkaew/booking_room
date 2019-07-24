@@ -650,7 +650,7 @@ def get_available_projector(cursor):
 def post_available_projector(cursor):
     try:
         if not request.is_json:
-            return jsonify({"msg": "Missing JSON in request"}), 400
+            return jsonify({"message": "Missing JSON in request"}), 400
         else:
             col = request.json.get('col', None)
             code = request.json.get('code', None)
@@ -665,7 +665,7 @@ def post_available_projector(cursor):
             rid = request.json.get('rid', None)
             row = request.json.get('row', None)
             if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not ps or not rid or not row:
-                return jsonify({"msg": "Missing parameter"}), 400
+                return jsonify({"message": "Missing parameter"}), 400
 
             response = requests.get(
                 'https://chat-develop.one.th:8007/checkSatff/'+code+'/'+oneid)
