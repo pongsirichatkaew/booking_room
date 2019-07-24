@@ -692,25 +692,30 @@ def post_available_room(cursor):
                     print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
+                    sql_insert = []
                     for r in row:
                         sql_search_row = """ SELECT room.rname,t.time
-                                                FROM ticketroom as r
-                                                LEFT JOIN time as t
-                                                ON r.row = t.row
-                                                LEFT JOIN room as room
-                                                ON r.rid = room.rid
-                                                WHERE r.rid=%s AND r.row=%s AND Date(r.date) = %s """
+                                            FROM ticketroom as r
+                                            LEFT JOIN time as t
+                                            ON r.row = t.row
+                                            LEFT JOIN room as room
+                                            ON r.rid = room.rid
+                                            WHERE r.rid=%s AND r.row=%s AND Date(r.date) = %s """
                         cursor.execute(sql_search_row, (rid, r, date,))
                         columns = [column[0] for column in cursor.description]
                         search_row = toJson(cursor.fetchall(), columns)
+
                         if(search_row):
-                            return jsonify({"message": "{} in {} is already Exists".format(search_row[0]['rname'], search_row[0]['time'])}),400
+                            return jsonify({"message": "{} in {} is already Exists".format(search_row[0]['rname'], search_row[0]['time'])}), 400
                         else:
-                            sql_insert = """ INSERT INTO `ticketroom`(`rid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) 
-                                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
-                            cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
-                                                        department, email, description, numberofpeople, ps, date))                        
-                    return jsonify({"message": "Insert Success"})
+                            sql_insert.append("INSERT INTO `ticketroom`(`rid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'); ".format(
+                                rid, r, col, oneid, code, name, department, email, description, numberofpeople, ps, date))
+
+                for sql in sql_insert:
+                    print(sql)
+                    cursor.execute(sql)
+
+                return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
     except Exception as e:
@@ -750,12 +755,29 @@ def post_available_vehicle(cursor):
                     print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
+                    sql_insert = []
                     for r in row:
-                        print(r)
-                        sql_insert = """ INSERT INTO `ticketroom`(`rid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) 
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
-                        cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
-                                                    department, email, description, numberofpeople, ps, date))
+                        sql_search_row = """ SELECT room.rname,t.time
+                                            FROM ticketroom as r
+                                            LEFT JOIN time as t
+                                            ON r.row = t.row
+                                            LEFT JOIN room as room
+                                            ON r.rid = room.rid
+                                            WHERE r.rid=%s AND r.row=%s AND Date(r.date) = %s """
+                        cursor.execute(sql_search_row, (rid, r, date,))
+                        columns = [column[0] for column in cursor.description]
+                        search_row = toJson(cursor.fetchall(), columns)
+
+                        if(search_row):
+                            return jsonify({"message": "{} in {} is already Exists".format(search_row[0]['rname'], search_row[0]['time'])}), 400
+                        else:
+                            sql_insert.append("INSERT INTO `ticketroom`(`rid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'); ".format(
+                                rid, r, col, oneid, code, name, department, email, description, numberofpeople, ps, date))
+
+                for sql in sql_insert:
+                    print(sql)
+                    cursor.execute(sql)
+
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500

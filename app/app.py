@@ -1,5 +1,4 @@
 from Config.config import *
-from user_get import *
 from booking import *
 
 
@@ -24,4 +23,4 @@ def get_my_ip():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='172.16.34.32', threaded=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', threaded=True, port=5000)
