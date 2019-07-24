@@ -34,7 +34,7 @@ def login(cursor):
 @connect_sql()
 def get_all_rooms(cursor):
     try:
-        sql = """SELECT rid,rname as name,rnumber FROM room where rstatus = 'show'"""
+        sql = """SELECT rid,rname as name,rnumber FROM room where rstatus = 'show' and category = 'room' """
         cursor.execute(sql,)
         columns = [column[0] for column in cursor.description]
         result = toJson(cursor.fetchall(), columns)
@@ -43,6 +43,22 @@ def get_all_rooms(cursor):
         print('error ===', e)
         current_app.logger.info(e)
         return jsonify(str(e)), 500
+
+
+@app.route('/api/v1/vehicles', methods=['GET'])
+@connect_sql()
+def get_all_vehicles(cursor):
+    try:
+        sql = """SELECT rid,rname as name,rnumber FROM room where rstatus = 'show' and category = 'vehicle' """
+        cursor.execute(sql,)
+        columns = [column[0] for column in cursor.description]
+        result = toJson(cursor.fetchall(), columns)
+        return jsonify({"message": result})
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
+        return jsonify(str(e)), 500
+
 
 # ------------------------ Room with time ---------------------#
 @app.route('/api/v1/ticket_room', methods=['POST'])
@@ -68,7 +84,7 @@ def get_ticket_room(cursor):
                 cursor.execute(sql, (date,))
                 columns = [column[0] for column in cursor.description]
                 result = toJson(cursor.fetchall(), columns)
-                return jsonify({"message":result})
+                return jsonify({"message": result})
             elif room_id and date:
                 print('date_some_room', date)
                 print('date_some_room', type(room_id))
@@ -82,7 +98,7 @@ def get_ticket_room(cursor):
                 cursor.execute(sql, (date, room_id,))
                 columns = [column[0] for column in cursor.description]
                 result = toJson(cursor.fetchall(), columns)
-                return jsonify({"message":result})
+                return jsonify({"message": result})
     except Exception as e:
         current_app.logger.info(e)
         return jsonify({"message": str(e)}), 500
@@ -647,7 +663,7 @@ def get_available_projector(cursor):
 
 @app.route('/api/v1/insert_room', methods=['POST'])
 @connect_sql()
-def post_available_projector(cursor):
+def post_available_room(cursor):
     try:
         if not request.is_json:
             return jsonify({"message": "Missing JSON in request"}), 400
@@ -673,7 +689,65 @@ def post_available_projector(cursor):
                 raw = response.text
                 raw = json.loads(raw)
                 if raw['status'] == "fail":
-                    print(raw['status'])    
+                    print(raw['status'])
+                    return jsonify({"message": raw}), 401
+                else:
+                    for r in row:
+                        sql_search_row = """ SELECT room.rname,t.time
+                                                FROM ticketroom as r
+                                                LEFT JOIN time as t
+                                                ON r.row = t.row
+                                                LEFT JOIN room as room
+                                                ON r.rid = room.rid
+                                                WHERE r.rid=%s AND r.row=%s AND Date(r.date) = %s """
+                        cursor.execute(sql_search_row, (rid, r, date,))
+                        columns = [column[0] for column in cursor.description]
+                        search_row = toJson(cursor.fetchall(), columns)
+                        if(search_row):
+                            return jsonify({"message": "{} in {} is already Exists".format(search_row[0]['rname'], search_row[0]['time'])}),400
+                        else:
+                            sql_insert = """ INSERT INTO `ticketroom`(`rid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) 
+                                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
+                            cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
+                                                        department, email, description, numberofpeople, ps, date))                        
+                    return jsonify({"message": "Insert Success"})
+            else:
+                return jsonify({"message": "one id error"}), 500
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
+        return jsonify(str(e))
+
+
+@app.route('/api/v1/insert_vehicle', methods=['POST'])
+@connect_sql()
+def post_available_vehicle(cursor):
+    try:
+        if not request.is_json:
+            return jsonify({"message": "Missing JSON in request"}), 400
+        else:
+            col = request.json.get('col', None)
+            code = request.json.get('code', None)
+            date = request.json.get('date', None)
+            department = request.json.get('department', None)
+            description = request.json.get('description', None)
+            email = request.json.get('email', None)
+            name = request.json.get('name', None)
+            numberofpeople = request.json.get('numberofpeople', None)
+            oneid = request.json.get('oneid', None)
+            ps = request.json.get('ps', None)
+            rid = request.json.get('rid', None)
+            row = request.json.get('row', None)
+            if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not ps or not rid or not row:
+                return jsonify({"message": "Missing parameter"}), 400
+
+            response = requests.get(
+                'https://chat-develop.one.th:8007/checkSatff/'+code+'/'+oneid)
+            if response:
+                raw = response.text
+                raw = json.loads(raw)
+                if raw['status'] == "fail":
+                    print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
                     for r in row:
@@ -681,7 +755,53 @@ def post_available_projector(cursor):
                         sql_insert = """ INSERT INTO `ticketroom`(`rid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) 
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
                         cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
-                                                department, email, description, numberofpeople, ps, date))
+                                                    department, email, description, numberofpeople, ps, date))
+                return jsonify({"message": "Insert Success"})
+            else:
+                return jsonify({"message": "one id error"}), 500
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
+        return jsonify(str(e))
+
+
+@app.route('/api/v1/insert_projector', methods=['POST'])
+@connect_sql()
+def post_available_projector(cursor):
+    try:
+        if not request.is_json:
+            return jsonify({"message": "Missing JSON in request"}), 400
+        else:
+            col = request.json.get('col', None)
+            code = request.json.get('code', None)
+            date = request.json.get('date', None)
+            department = request.json.get('department', None)
+            description = request.json.get('description', None)
+            email = request.json.get('email', None)
+            name = request.json.get('name', None)
+            numberofpeople = request.json.get('numberofpeople', None)
+            oneid = request.json.get('oneid', None)
+            ps = request.json.get('ps', None)
+            pid = request.json.get('pid', None)
+            row = request.json.get('row', None)
+            if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not ps or not rid or not row:
+                return jsonify({"message": "Missing parameter"}), 400
+
+            response = requests.get(
+                'https://chat-develop.one.th:8007/checkSatff/'+code+'/'+oneid)
+            if response:
+                raw = response.text
+                raw = json.loads(raw)
+                if raw['status'] == "fail":
+                    print(raw['status'])
+                    return jsonify({"message": raw}), 401
+                else:
+                    for r in row:
+                        print(r)
+                        sql_insert = """ INSERT INTO `ticketprojector`(`pid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) 
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
+                        cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
+                                                    department, email, description, numberofpeople, ps, date))
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
@@ -705,7 +825,7 @@ def get_all_room_with_time(cursor):
         cursor.execute(sql,)
         columns = [column[0] for column in cursor.description]
         result = toJson(cursor.fetchall(), columns)
-        return jsonify({"message":result})
+        return jsonify({"message": result})
     except Exception as e:
         print('error ===', e)
         current_app.logger.info(e)
