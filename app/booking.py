@@ -380,7 +380,7 @@ def get_available_vehicle_room(cursor):
 # ------------------------ Projector with time ---------------------#
 @app.route('/api/v1/available_projector', methods=['POST'])
 @connect_sql()
-def get_available_vehicle_projector(cursor):
+def get_available_projector(cursor):
     try:
         if not request.is_json:
             return jsonify({"message": "Missing JSON in request"}), 400
@@ -403,10 +403,10 @@ def get_available_vehicle_projector(cursor):
                             LEFT JOIN projector as projector
                             ON r.pid = projector.pid
                             WHERE Date(r.date) = %s AND r.pid = %s"""
-                    cursor.execute(sql, (date, projector["rid"],))
+                    cursor.execute(sql, (date, projector["pid"],))
                     columns = [column[0] for column in cursor.description]
                     room_result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": projector["pname"], "rid": projector["pid"]}
+                    jsonResult = {"name": projector["pname"], "pid": projector["pid"]}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -457,24 +457,24 @@ def get_available_vehicle_projector(cursor):
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
                 return jsonify({"result": arr_room})
-            elif vehicle_id and date:
-                sql_vehicle_id = """SELECT rname FROM `room` WHERE rid = %s and category = 'vehicle' AND rstatus='show'"""
-                cursor.execute(sql_vehicle_id, (vehicle_id,))
+            elif projector_id and date:
+                sql_projector_id = """SELECT pname FROM projector WHERE pid = %s AND pstatus='show'"""
+                cursor.execute(sql_projector_id, (projector_id,))
                 columns = [column[0] for column in cursor.description]
-                result_room_id = toJson(cursor.fetchall(), columns)
-                if result_room_id:
-                    room_name = result_room_id[0]['rname']
-                    sql = """SELECT t.time,room.rname,t.row
-                            FROM ticketroom as r
+                result_projector_id = toJson(cursor.fetchall(), columns)
+                if result_projector_id:
+                    room_name = result_projector_id[0]['pname']
+                    sql = """SELECT t.time,projector.pname,t.row
+                            FROM ticketprojector as r
                             LEFT JOIN time as t
                             ON r.row = t.row
-                            LEFT JOIN room as room
-                            ON r.rid = room.rid
-                            WHERE Date(r.date) = %s AND r.rid = %s"""
-                    cursor.execute(sql, (date, vehicle_id,))
+                            LEFT JOIN projector as projector
+                            ON r.pid = projector.pid
+                            WHERE Date(r.date) = %s AND r.pid = %s"""
+                    cursor.execute(sql, (date, projector_id,))
                     columns = [column[0] for column in cursor.description]
                     result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room_name, "rid": vehicle_id}
+                    jsonResult = {"name": room_name, "pid": projector_id}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -530,7 +530,7 @@ def get_available_vehicle_projector(cursor):
                     # jsonResult.update({"times": list(my_time)})
                     return jsonify({"result": jsonResult})
                 else:
-                    return jsonify({"message": "room_id is invalid"}), 400
+                    return jsonify({"message": "pid is invalid"}), 400
     except Exception as e:
         current_app.logger.info(e)
         return jsonify({"message": str(e)}), 500
