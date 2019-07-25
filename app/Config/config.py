@@ -19,7 +19,7 @@ CORS(app)
 # --------------------------mail------------------------
 app.config['MAIL_SERVER'] = 'mailtx.inet.co.th'
 app.config['MAIL_PORT'] = 25
-app.config['MAIL_USERNAME'] = 'navamail@mamon.com'
+app.config['MAIL_USERNAME'] = 'noreply.booking@inet.co.th'
 app.config['MAIL_PASSWORD'] = ''
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = False
