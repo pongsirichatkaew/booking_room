@@ -60,6 +60,21 @@ def get_all_vehicles(cursor):
         return jsonify(str(e)), 500
 
 
+@app.route('/api/v1/projectors', methods=['GET'])
+@connect_sql()
+def get_all_projectors(cursor):
+    try:
+        sql = """ SELECT pid,pname as name FROM projector WHERE pstatus = 'show'  """
+        cursor.execute(sql,)
+        columns = [column[0] for column in cursor.description]
+        result = toJson(cursor.fetchall(), columns)
+        return jsonify({"message": result})
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
+        return jsonify(str(e)), 500
+
+
 # ------------------------ Room with time ---------------------#
 @app.route('/api/v1/ticket_room', methods=['POST'])
 @connect_sql()
@@ -806,7 +821,7 @@ def post_available_projector(cursor):
             ps = request.json.get('ps', None)
             pid = request.json.get('pid', None)
             row = request.json.get('row', None)
-            if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not ps or not rid or not row:
+            if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not ps or not pid or not row:
                 return jsonify({"message": "Missing parameter"}), 400
 
             response = requests.get(
@@ -818,19 +833,35 @@ def post_available_projector(cursor):
                     print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
+                    sql_insert = []
                     for r in row:
-                        print(r)
-                        sql_insert = """ INSERT INTO `ticketprojector`(`pid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) 
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
-                        cursor.execute(sql_insert, (rid, r, col, oneid, code, name,
-                                                    department, email, description, numberofpeople, ps, date))
+                        sql_search_row = """SELECT t.time,projector.pname,t.row
+                                            FROM ticketprojector as r
+                                            LEFT JOIN time as t
+                                            ON r.row = t.row
+                                            LEFT JOIN projector as projector
+                                            ON r.pid = projector.pid
+                                            WHERE r.pid = %s AND r.row = %s AND Date(r.date) = %s """
+                        cursor.execute(sql_search_row, (pid, r, date,))
+                        columns = [column[0] for column in cursor.description]
+                        search_row = toJson(cursor.fetchall(), columns)
+                        if(search_row):
+                            return jsonify({"message": "{} in {} is already Exists".format(search_row[0]['pname'], search_row[0]['time'])}), 400
+                        else:
+                            sql_insert.append("INSERT INTO `ticketprojector`(`pid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'); ".format(
+                                pid, r, col, oneid, code, name, department, email, description, numberofpeople, ps, date))
+                            print(sql_insert)
+                for sql in sql_insert:
+                    print(sql)
+                    cursor.execute(sql)
+
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
     except Exception as e:
         print('error ===', e)
         current_app.logger.info(e)
-        return jsonify(str(e))
+        return jsonify(str(e)), 500
 
 # ------------------------ Room with time ---------------------#
 @app.route('/api/v1/test', methods=['GET'])
