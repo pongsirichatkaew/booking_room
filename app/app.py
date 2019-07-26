@@ -1,5 +1,6 @@
 from Config.config import *
 from booking import *
+from send_message import *
 
 
 @app.route('/connect_backend', methods=['GET'])
