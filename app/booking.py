@@ -129,14 +129,13 @@ def get_available_ticket_room(cursor):
         else:
             date = request.json.get('date', None)
             room_id = request.json.get('rid', None)
-            if not date and not room_id:
-                date = datetime.datetime.now()
-                print('not date not id')
+            if not room_id and date:
                 room_sql = """SELECT rid,rname FROM room  WHERE category = 'room' AND rstatus='show' """
                 cursor.execute(room_sql, )
                 columns = [column[0] for column in cursor.description]
                 allroom = toJson(cursor.fetchall(), columns)
                 arr_room = []
+                print(allroom)
                 for room in allroom:
                     sql = """SELECT t.time,room.rname,t.row
                             FROM ticketroom as r
@@ -148,7 +147,16 @@ def get_available_ticket_room(cursor):
                     cursor.execute(sql, (date, room["rid"],))
                     columns = [column[0] for column in cursor.description]
                     room_result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room["rname"], "rid": room["rid"]}
+
+                    sql_select_room = """SELECT rnumber from room WHERE rid = %s"""
+                    cursor.execute(sql_select_room, (room["rid"],))
+                    columns = [column[0] for column in cursor.description]
+                    room_number = toJson(cursor.fetchall(), columns)
+                    print(room_number)
+
+                    jsonResult = {"name": room["rname"], "rid": room["rid"],
+                                  "rnumber": room_number[0]['rnumber']}
+
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -166,116 +174,29 @@ def get_available_ticket_room(cursor):
                     # print('selectedtime', arr_selecttime)
 
                     my_time = set(arr_alltime) - set(arr_selecttime)
-
+                    # print('listmytime', list(my_time))
                     list_time = []
-                    for mytime in my_time:
-                        if mytime == "08.01-09.00":
-                            list_time.append({"row": "1", "time": mytime})
-                        elif mytime == "09.01-10.00":
-                            list_time.append({"row": "2", "time": mytime})
-                        elif mytime == "10.01-11.00":
-                            list_time.append({"row": "3", "time": mytime})
-                        elif mytime == "11.01-12.00":
-                            list_time.append({"row": "4", "time": mytime})
-                        elif mytime == "12.01-13.00":
-                            list_time.append({"row": "5", "time": mytime})
-                        elif mytime == "13.01-14.00":
-                            list_time.append({"row": "6", "time": mytime})
-                        elif mytime == "14.01-15.00":
-                            list_time.append({"row": "7", "time": mytime})
-                        elif mytime == "15.01-16.00":
-                            list_time.append({"row": "8", "time": mytime})
-                        elif mytime == "16.01-17.00":
-                            list_time.append({"row": "9", "time": mytime})
-                        elif mytime == "17.01-18.00":
-                            list_time.append({"row": "10", "time": mytime})
-                        elif mytime == "18.01-19.00":
-                            list_time.append({"row": "11", "time": mytime})
-                        elif mytime == "> 19.01":
-                            list_time.append({"row": "12", "time": mytime})
+                    for t in list(my_time):
+                        for time in alltime:
+                            if(t == time['time']):
+                                list_time.append(
+                                    {"row": time['row'], "time": time['time']})
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
-                    arr_room.append(jsonResult)
-                    # jsonResult.update({"times": list(my_time)})
-                    # return jsonify({"result": jsonResult})
-                return jsonify({"message": arr_room})
-            elif not room_id and date:
-                room_sql = """SELECT rid,rname FROM room  WHERE category = 'room' AND rstatus='show' """
-                cursor.execute(room_sql, )
-                columns = [column[0] for column in cursor.description]
-                allroom = toJson(cursor.fetchall(), columns)
-                arr_room = []
-                for room in allroom:
-                    sql = """SELECT t.time,room.rname,t.row
-                            FROM ticketroom as r
-                            LEFT JOIN time as t
-                            ON r.row = t.row
-                            LEFT JOIN room as room
-                            ON r.rid = room.rid
-                            WHERE Date(r.date) = %s AND r.rid = %s"""
-                    cursor.execute(sql, (date, room["rid"],))
-                    columns = [column[0] for column in cursor.description]
-                    room_result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room["rname"], "rid": room["rid"]}
-                    sql_all_time = """SELECT time,row FROM `time`"""
-                    cursor.execute(sql_all_time)
-                    columns = [column[0] for column in cursor.description]
-                    alltime = toJson(cursor.fetchall(), columns)
-
-                    ## list Dict ##
-                    arr_alltime = []
-                    arr_selecttime = []
-                    arr_time = []
-                    for time in alltime:
-                        arr_alltime.append(time['time'])
-                    # print('alltime', arr_alltime)
-                    for time in room_result:
-                        arr_selecttime.append(time['time'])
-                    # print('selectedtime', arr_selecttime)
-
-                    my_time = set(arr_alltime) - set(arr_selecttime)
-
-                    list_time = []
-                    for mytime in my_time:
-                        if mytime == "08.01-09.00":
-                            list_time.append({"row": "1", "time": mytime})
-                        elif mytime == "09.01-10.00":
-                            list_time.append({"row": "2", "time": mytime})
-                        elif mytime == "10.01-11.00":
-                            list_time.append({"row": "3", "time": mytime})
-                        elif mytime == "11.01-12.00":
-                            list_time.append({"row": "4", "time": mytime})
-                        elif mytime == "12.01-13.00":
-                            list_time.append({"row": "5", "time": mytime})
-                        elif mytime == "13.01-14.00":
-                            list_time.append({"row": "6", "time": mytime})
-                        elif mytime == "14.01-15.00":
-                            list_time.append({"row": "7", "time": mytime})
-                        elif mytime == "15.01-16.00":
-                            list_time.append({"row": "8", "time": mytime})
-                        elif mytime == "16.01-17.00":
-                            list_time.append({"row": "9", "time": mytime})
-                        elif mytime == "17.01-18.00":
-                            list_time.append({"row": "10", "time": mytime})
-                        elif mytime == "18.01-19.00":
-                            list_time.append({"row": "11", "time": mytime})
-                        elif mytime == "> 19.01":
-                            list_time.append({"row": "12", "time": mytime})
-
-                    list_time.sort(key=extract_time, reverse=False)
-                    jsonResult.update({"times": list_time})
+                    print('jsonResult1', jsonResult)
                     arr_room.append(jsonResult)
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
                 return jsonify({"message": arr_room})
             elif room_id and date:
-                sql_room_id = """SELECT rname FROM `room` WHERE rid = %s and category = 'room' AND rstatus='show'"""
+                sql_room_id = """SELECT rname,rnumber FROM `room` WHERE rid = %s and category = 'room' AND rstatus='show'"""
                 cursor.execute(sql_room_id, (room_id,))
                 columns = [column[0] for column in cursor.description]
                 result_room_id = toJson(cursor.fetchall(), columns)
                 if result_room_id:
                     room_name = result_room_id[0]['rname']
+                    room_number = result_room_id[0]['rnumber']
                     sql = """SELECT t.time,room.rname,t.row
                             FROM ticketroom as r
                             LEFT JOIN time as t
@@ -286,7 +207,9 @@ def get_available_ticket_room(cursor):
                     cursor.execute(sql, (date, room_id,))
                     columns = [column[0] for column in cursor.description]
                     result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room_name, "rid": room_id}
+
+                    jsonResult = {"name": room_name,
+                                  "rid": room_id, "rnumber": room_number}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -306,31 +229,11 @@ def get_available_ticket_room(cursor):
                     my_time = set(arr_alltime) - set(arr_selecttime)
 
                     list_time = []
-                    for mytime in my_time:
-                        if mytime == "08.01-09.00":
-                            list_time.append({"row": "1", "time": mytime})
-                        elif mytime == "09.01-10.00":
-                            list_time.append({"row": "2", "time": mytime})
-                        elif mytime == "10.01-11.00":
-                            list_time.append({"row": "3", "time": mytime})
-                        elif mytime == "11.01-12.00":
-                            list_time.append({"row": "4", "time": mytime})
-                        elif mytime == "12.01-13.00":
-                            list_time.append({"row": "5", "time": mytime})
-                        elif mytime == "13.01-14.00":
-                            list_time.append({"row": "6", "time": mytime})
-                        elif mytime == "14.01-15.00":
-                            list_time.append({"row": "7", "time": mytime})
-                        elif mytime == "15.01-16.00":
-                            list_time.append({"row": "8", "time": mytime})
-                        elif mytime == "16.01-17.00":
-                            list_time.append({"row": "9", "time": mytime})
-                        elif mytime == "17.01-18.00":
-                            list_time.append({"row": "10", "time": mytime})
-                        elif mytime == "18.01-19.00":
-                            list_time.append({"row": "11", "time": mytime})
-                        elif mytime == "> 19.01":
-                            list_time.append({"row": "12", "time": mytime})
+                    for t in list(my_time):
+                        for time in alltime:
+                            if(t == time['time']):
+                                list_time.append(
+                                    {"row": time['row'], "time": time['time']})
 
                     list_time.sort(key=extract_time, reverse=False)
 
@@ -384,7 +287,16 @@ def get_available_vehicle_room(cursor):
                     cursor.execute(sql, (date, room["rid"],))
                     columns = [column[0] for column in cursor.description]
                     room_result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room["rname"], "rid": room["rid"]}
+
+
+                    sql_select_room = """SELECT rnumber from room WHERE rid = %s"""
+                    cursor.execute(sql_select_room, (room["rid"],))
+                    columns = [column[0] for column in cursor.description]
+                    room_number = toJson(cursor.fetchall(), columns)
+                    print(room_number)
+
+
+                    jsonResult = {"name": room["rname"], "rid": room["rid"],"rnumber":room_number[0]['rnumber']}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -404,31 +316,11 @@ def get_available_vehicle_room(cursor):
                     my_time = set(arr_alltime) - set(arr_selecttime)
 
                     list_time = []
-                    for mytime in my_time:
-                        if mytime == "08.01-09.00":
-                            list_time.append({"row": "1", "time": mytime})
-                        elif mytime == "09.01-10.00":
-                            list_time.append({"row": "2", "time": mytime})
-                        elif mytime == "10.01-11.00":
-                            list_time.append({"row": "3", "time": mytime})
-                        elif mytime == "11.01-12.00":
-                            list_time.append({"row": "4", "time": mytime})
-                        elif mytime == "12.01-13.00":
-                            list_time.append({"row": "5", "time": mytime})
-                        elif mytime == "13.01-14.00":
-                            list_time.append({"row": "6", "time": mytime})
-                        elif mytime == "14.01-15.00":
-                            list_time.append({"row": "7", "time": mytime})
-                        elif mytime == "15.01-16.00":
-                            list_time.append({"row": "8", "time": mytime})
-                        elif mytime == "16.01-17.00":
-                            list_time.append({"row": "9", "time": mytime})
-                        elif mytime == "17.01-18.00":
-                            list_time.append({"row": "10", "time": mytime})
-                        elif mytime == "18.01-19.00":
-                            list_time.append({"row": "11", "time": mytime})
-                        elif mytime == "> 19.01":
-                            list_time.append({"row": "12", "time": mytime})
+                    for t in list(my_time):
+                        for time in alltime:
+                            if(t == time['time']):
+                                list_time.append(
+                                    {"row": time['row'], "time": time['time']})
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
@@ -438,12 +330,14 @@ def get_available_vehicle_room(cursor):
                     # return jsonify({"result": jsonResult})
                 return jsonify({"message": arr_room})
             elif vehicle_id and date:
-                sql_vehicle_id = """SELECT rname FROM `room` WHERE rid = %s and category = 'vehicle' AND rstatus='show'"""
+                sql_vehicle_id = """SELECT rname,rnumber FROM `room` WHERE rid = %s and category = 'vehicle' AND rstatus='show'"""
                 cursor.execute(sql_vehicle_id, (vehicle_id,))
                 columns = [column[0] for column in cursor.description]
                 result_room_id = toJson(cursor.fetchall(), columns)
                 if result_room_id:
                     room_name = result_room_id[0]['rname']
+                    room_number = result_room_id[0]['rnumber']
+
                     sql = """SELECT t.time,room.rname,t.row
                             FROM ticketroom as r
                             LEFT JOIN time as t
@@ -454,7 +348,7 @@ def get_available_vehicle_room(cursor):
                     cursor.execute(sql, (date, vehicle_id,))
                     columns = [column[0] for column in cursor.description]
                     result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room_name, "rid": vehicle_id}
+                    jsonResult = {"name": room_name, "rid": vehicle_id,"rnumber":room_number}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -474,31 +368,11 @@ def get_available_vehicle_room(cursor):
                     my_time = set(arr_alltime) - set(arr_selecttime)
 
                     list_time = []
-                    for mytime in my_time:
-                        if mytime == "08.01-09.00":
-                            list_time.append({"row": "1", "time": mytime})
-                        elif mytime == "09.01-10.00":
-                            list_time.append({"row": "2", "time": mytime})
-                        elif mytime == "10.01-11.00":
-                            list_time.append({"row": "3", "time": mytime})
-                        elif mytime == "11.01-12.00":
-                            list_time.append({"row": "4", "time": mytime})
-                        elif mytime == "12.01-13.00":
-                            list_time.append({"row": "5", "time": mytime})
-                        elif mytime == "13.01-14.00":
-                            list_time.append({"row": "6", "time": mytime})
-                        elif mytime == "14.01-15.00":
-                            list_time.append({"row": "7", "time": mytime})
-                        elif mytime == "15.01-16.00":
-                            list_time.append({"row": "8", "time": mytime})
-                        elif mytime == "16.01-17.00":
-                            list_time.append({"row": "9", "time": mytime})
-                        elif mytime == "17.01-18.00":
-                            list_time.append({"row": "10", "time": mytime})
-                        elif mytime == "18.01-19.00":
-                            list_time.append({"row": "11", "time": mytime})
-                        elif mytime == "> 19.01":
-                            list_time.append({"row": "12", "time": mytime})
+                    for t in list(my_time):
+                        for time in alltime:
+                            if(t == time['time']):
+                                list_time.append(
+                                    {"row": time['row'], "time": time['time']})
 
                     # print('list_time', list_time)
                     # jsonResult["times"] = list_time

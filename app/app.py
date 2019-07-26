@@ -1,5 +1,6 @@
 from Config.config import *
 from booking import *
+from booking_time import *
 from send_message import *
 
 
