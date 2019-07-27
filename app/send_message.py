@@ -3,163 +3,252 @@ import ast
 # import datetime
 from datetime import date
 from datetime import timedelta
+import json
 
-@app.route('/checklogin', methods=['POST'])
 @connect_sql()
-def checklogin_one_id(cursor):
-    try:
-        data = request.json
-        username = data['username']
-        password = data['password']
-        payload = {
-            "grant_type": "password",
-            "client_id": "37",
-            "client_secret": "OiEdomw5Pr9T0dlipNWWlutB9rdsojH3ToE2MENb",
-            "username": username,
-            "password": password
-        }
+def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
+    sql_step1 = ''
+    sql_step2 = ''
+    sql_step3 = ''
+    category = ''
+    if tabel == 'ticketprojector':
+        sql_step1 = """
+        SELECT r.code,r.oneid,r.name,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketprojector as r 
+        WHERE Date(r.date) = %s GROUP BY r.name
+        """
+        sql_step2 = """
+        SELECT projector.pname AS name,r.row,r.pid AS id FROM ticketprojector as r
+            LEFT JOIN projector as projector ON r.pid = projector.pid WHERE Date(r.date) = %s AND r.name = %s GROUP BY r.pid
+        """
+        sql_step3 = """
+        SELECT t.time, t.row FROM ticketprojector as r
+        LEFT JOIN time as t ON r.row = t.row WHERE Date(r.date) = %s AND r.pid = %s ORDER BY r.row ASC
+        """
+    elif tabel == 'ticketroom':
+        sql_step1 = """
+        SELECT r.name,r.oneid,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r WHERE Date(r.date) = %s GROUP BY r.name
+        """
+        sql_step2 = """
+        SELECT room.rname AS name,room.category,r.row,r.rid AS id FROM ticketroom as r
+        LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND r.name = %s GROUP BY r.rid
+        """
+        sql_step3 = """
+        SELECT t.time, t.row FROM ticketroom as r
+        LEFT JOIN time as t ON r.row = t.row WHERE Date(r.date) = %s AND r.rid = %s ORDER BY r.row ASC
+        """
 
-        response = requests.request(
-            "POST", url="https://one.th/api/oauth/getpwd", json=payload, timeout=(60 * 1)).json()
-        # print(response)
-        if response['result'] == 'Fail':
-            return jsonify({'status': 'Fail'})
-        accessTokenOneID = response['token_type']+' '+response['access_token']
-        informationUser = requests.get("https://one.th/api/account", headers={
-                                       'Authorization': accessTokenOneID}, timeout=(60 * 1)).json()
-        return jsonify(informationUser)
-    except Exception as e:
-        current_app.logger.info(e)
-        return jsonify(str(e))
+    sql = sql_step1
+    cursor.execute(sql, nextDay)
+    columns = [column[0] for column in cursor.description]
+    results = toJson(cursor.fetchall(), columns)
+
+    for result in results:
+        sql = sql_step2
+        cursor.execute(sql, (nextDay,result['name']))
+        columns = [column[0] for column in cursor.description]
+        detailList = toJson(cursor.fetchall(), columns)
+        detailResult = []
+        timeStart = ''
+        timeEnd = ''
+        for detail in detailList:
+            sql = sql_step3
+            cursor.execute(sql, (nextDay,detail['id']))
+            columns = [column[0] for column in cursor.description]
+            times = toJson(cursor.fetchall(), columns)
+            time = ''
+            mergedTime = []
+
+            if len(times) > 1:
+                txtTime = times[0]['time']
+                txt = txtTime.split('-')
+                timeStart = txt[0]
+                timeEnd = ''
+                for index in range(len(times)):
+                    tmp = -1
+                    if (index + 1 != len(times)):
+                        if (times[index]['row'] - times[index + 1]['row']) == -1:
+                            txtTimeLast = times[index]['time']
+                            txtLast = txtTimeLast.split('-')
+                            if len(txtLast) > 1:
+                                timeEnd = txtLast[1]
+                            else:
+                                timeEnd = txtLast[0]
+                        else:
+                            txtTimeLast = times[index]['time']
+                            txtLast = txtTimeLast.split('-')
+                            if len(txtLast) > 1:
+                                timeEnd = txtLast[1]
+                            else:
+                                timeEnd = txtLast[0]
+                            mergedTime.append(timeStart + '-' + timeEnd)
+                            txtTime = times[index + 1]['time']
+                            txt = txtTime.split('-')
+                            timeStart = txt[0]
+                    else:
+                        if (times[index]['row'] - times[index - 1]['row']) == 1:
+                            txtTimeLast = times[index]['time']
+                            txtLast = txtTimeLast.split('-')
+                            if len(txtLast) > 1:
+                                timeEnd = txtLast[1]
+                            else:
+                                timeEnd = txtLast[0]
+                            mergedTime.append(timeStart + '-' + timeEnd)
+                        else:
+                            txtTimeLast = times[index]['time']
+                            txtLast = txtTimeLast.split('-')
+                            if len(txtLast) > 1:
+                                timeEnd = txtLast[1]
+                            else:
+                                timeEnd = txtLast[0]
+                            mergedTime.append(times[index]['time'])
+
+                time = timeStart + '-' + timeEnd
+            else:
+                mergedTime.append(times[0]['time'])
+
+
+            if tabel == 'ticketprojector':
+                category = 'device'
+            else:
+                category = detail['category']
+
+            detailResult.append({
+                'category': category,
+                'name': detail['name'],
+                'times': times,
+                'mergedTime': mergedTime
+            })
+
+        if result['oneid'] is not None:
+            payload = {
+                "bot_id" : bot_id,
+                "key_search" : result['oneid']
+            }
+            try:
+                response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
+                headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
+                if response['status'] != 'fail':
+                    result['user_id'] = response['friend']['user_id']
+                else:
+                    result['user_id'] = None
+            except Exception as e:
+                current_app.logger.info(e)
+        else:
+            result['user_id'] = None
+
+        result['room'] = detailResult
+    return results
+
+def month(val):
+    monthList = [
+    'ม.ค',
+    'ก.พ',
+    'มี.ค',
+    'เม.ย',
+    'พ.ค',
+    'มิ.ย',
+    'ก.ค',
+    'ส.ค',
+    'ก.ย',
+    'ต.ค',
+    'พ.ย',
+    'ธ.ค'
+    ]
+    return monthList[int(val) - 1]
+
+def nextDayThai (val):
+    splitDay = val.split('-')
+    yearThai = (int(splitDay[0]) + 543) - 2500
+    dateThai = "{} {} {}".format(splitDay[2],month(splitDay[1]), yearThai)
+    return dateThai
 
 @app.route('/api/v1/send_message', methods=['GET'])
 @connect_sql()
 def send_message(cursor):
     try:
         today = date.today() + timedelta(days=1) 
-        # today = date.today()
-        nextDay = today.strftime("%Y-%m-%d")
-        print(nextDay)
+        nextDay = '2019-07-27'
+        # nextDay = today.strftime("%Y-%m-%d")
+        dateThai = nextDayThai(nextDay)
         bot_id = "B9f17b544628e5dfa8be224d00e759065"
         tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
-        # sql = """
-        # SELECT t.time,projector.pname,t.row,r.code,r.oneid,r.name,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketprojector as r 
-        # LEFT JOIN time as t ON r.row = t.row LEFT JOIN projector as projector ON r.pid = projector.pid WHERE Date(r.date) = %s GROUP BY r.name
-        # """
-        # cursor.execute(sql, nextDay)
-        # columns = [column[0] for column in cursor.description]
-        # result_printers = toJson(cursor.fetchall(), columns)
+
+        ticketprojector = format_json_for_send_message(nextDay, 'ticketprojector', bot_id, tokenBot)
+        ticketroom = format_json_for_send_message(nextDay, 'ticketroom', bot_id, tokenBot)
         result = []
-        sql = """
-        SELECT r.name,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r WHERE Date(r.date) = %s GROUP BY r.name
-        """
-        cursor.execute(sql, nextDay)
-        columns = [column[0] for column in cursor.description]
-        result_rooms = toJson(cursor.fetchall(), columns)
+        for roomList in ticketroom:
+            result.append(roomList)
+        
+        for deviceLists in ticketprojector:
+            result.append(deviceLists)
 
-        for result_room in result_rooms:
-            sql = """
-            SELECT room.rname,room.category,r.row,r.rid FROM ticketroom as r
-             LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND r.name = %s GROUP BY r.rid
-            """
-            cursor.execute(sql, (nextDay,result_room['name']))
-            columns = [column[0] for column in cursor.description]
-            rooms = toJson(cursor.fetchall(), columns)
-            room = []
-            for rname in rooms:
-                sql = """
-                SELECT t.time FROM ticketroom as r
-                LEFT JOIN time as t ON r.row = t.row WHERE Date(r.date) = %s AND r.rid = %s ORDER BY r.row ASC LIMIT 1
-                """
-                cursor.execute(sql, (nextDay,rname['rid']))
-                timesFirsts = cursor.fetchone()
-                timesFirst = timesFirsts[0]
-                txt1 = timesFirst
-                x = txt1.split("-")
-                timesFirst = x[0]
+        for item in result:
+            if item['user_id'] is not None:
+                categoryTitle = ''
+                timeSelec = ''
+                send_msg_oneChat_title = """พรุ่งนี้วันที่ {} คุณ {} ได้ทำการจอง{} \n""".format(dateThai,item['name'],categoryTitle)
+                send_msg_oneChat = ''
+                for idx, itemticket in enumerate(item['room']):
+                    if itemticket['category'] == 'room':
+                        categoryTitle ='ห้อง'
+                    elif itemticket['category'] == 'vehicle':
+                        categoryTitle ='รถตู้'
+                    else:
+                        categoryTitle ='อุปกรณ์'
+                    timeSelec = 'เวลา: \n'
+                    for index in range(len(itemticket['mergedTime'])):
+                        timeSelec += str(itemticket['mergedTime'][index])
+                        if index != len(itemticket['mergedTime']) - 1:
+                            timeSelec += "\n"
 
-                sql = """
-                SELECT t.time FROM ticketroom as r
-                LEFT JOIN time as t ON r.row = t.row WHERE Date(r.date) = %s AND r.rid = %s ORDER BY r.row DESC LIMIT 1
-                """
-                cursor.execute(sql, (nextDay,rname['rid']))
-                timesLasts = cursor.fetchone()
-                timesLast = timesLasts[0]
-                txt2 = timesLast
-                y = txt2.split("-")
-                if len(y) != 1:
-                    timesLast = y[1]
-                else:
-                    timesLast = y[0]
+                    send_msg_oneChat += """\n{}. {} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n{}""".format(
+                        (idx + 1),itemticket['name'],item['description'],item['numberofpeople'],item['ps'], timeSelec)
+                    if (idx + 1) != len(item['room']):
+                        send_msg_oneChat += "\n\n"
+                    if (idx + 1) != len(item['room']):
+                        send_msg_oneChat += "----------------------------------------\n"
+                payload_msg =  {
+                            "to" : item['user_id'],
+                            "bot_id" : bot_id,
+                            "type" : "text",
+                            "message" : send_msg_oneChat_title + send_msg_oneChat
+                        }
+                response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+                headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
 
-                time = timesFirst + ' - ' + timesLast
+            if item['email'] is not None:
+                categoryTitle = ''
+                timeSelec = ''
+                send_msg_title = """พรุ่งนี้วันที่ {} คุณ {} ได้ทำการจองตามรายการดังนี้ <br><br>""".format(dateThai,item['name'])
+                send_msg_email = ''
+                for idx, itemticket in enumerate(item['room']):
+                    if itemticket['category'] == 'room':
+                        categoryTitle ='ห้อง'
+                    elif itemticket['category'] == 'vehicle':
+                        categoryTitle ='รถตู้'
+                    else:
+                        categoryTitle ='อุปกรณ์'
+                    timeSelec = 'เวลา: <br>'
+                    timeSelec += '<ul style="padding-left: 15px;">'
+                    for index in range(len(itemticket['mergedTime'])):
+                        timeSelec += '<li>' + str(itemticket['mergedTime'][index]) + '</li>'
+                    timeSelec += '</ul>'
+                    send_msg_email += """ <ul style="list-style-type:none; padding: 0; margin: 0;"> """
+                    send_msg_email += """
+                    <li>{}. {} </li>
+                    <li>เหตุผล: {} </li>
+                    <li>จำนวนคน: {} </li>
+                    <li>หมายเหตุ: {} </li> 
+                    <li>{} </li>""".format(
+                        (idx + 1),itemticket['name'],item['description'],item['numberofpeople'],item['ps'], timeSelec)
+                    send_msg_email += "</ul>"
+                    send_msg_email +="<br>"
 
-                room.append({
-                    'category': rname['category'],
-                    'rname': rname['rname'],
-                    'times': time
-                })
-            result_room['room'] = room
+                msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreplysotool@gmail.com', recipients = ['p.jirayusakul@gmail.com'])
+                msg.html = send_msg_title + send_msg_email
+                mail.send(msg)
 
-
-        # result_rooms = filter(lambda x: x.name == "Ms.Patinya  Buakaew", result_rooms)
-        # rooms = []
-        # output_dict = [x for x in result_rooms if x['name'] == 'Ms.Patinya  Buakaew']
-        # for output_dicts in output_dict:
-        #     data = {}
-        #     a = next((x for x in rooms if x.get('rname') == output_dicts['rname']), None)
-        #     if a is None:
-        #         print('roomss')
-        #         for room in rooms:
-        #             times = []
-        #             print('roomss')
-        #             if output_dicts['rname'] != room.get('rname'):
-        #                 for time in output_dict:
-        #                     if time['rname'] == output_dicts['rname']:
-        #                         times.append(time['time'])
-        #                 data = {
-        #                     'rname': output_dicts['rname'],
-        #                     'times': times
-        #                 }
-        #                 break
-        #         rooms.append(data)
-
-        # print(output_dict)
-
-        # sql = """
-        # SELECT t.time,room.rname,t.row,r.code,r.oneid,r.name,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r 
-        # LEFT JOIN time as t ON r.row = t.row LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND room.category LIKE 'vehicle'
-        # """
-        # cursor.execute(sql, nextDay)
-        # columns = [column[0] for column in cursor.description]
-        # result_vehicle = toJson(cursor.fetchall(), columns)
-
-        # for result_room in result_rooms:
-        #     send_msg = "พรุ่งนี้วันที่ {}  คุณ {} ได้ทำการจองห้อง {} ไว้".format(nextDay,result_room['name'], result_room['rname'])
-            
-        #     if result_room['email'] is not None:
-        #         msg = Message('แจ้งเตือนการจองห้อง', sender = 'noreply.booking@inet.co.th', recipients = [result_room['email']])
-        #         msg.body = send_msg
-        #         mail.send(msg)
-
-        #     if result_room['oneid'] is not None:
-        #         payload = {
-        #             "bot_id" : bot_id,
-        #             "key_search" : result_room['oneid']
-        #         }
-        #         response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
-        #         headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
-        #         if response['status'] != 'fail':
-        #             payload_msg =  {
-        #                     "to" : response['friend']['user_id'],
-        #                     "bot_id" : bot_id,
-        #                     "type" : "text",
-        #                     "message" : send_msg
-        #                 }
-        #             response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
-        #             headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
-
-        return jsonify(result_rooms)
+        return jsonify(result)
     except Exception as e:
         current_app.logger.info(e)
-        return jsonify(str(e))
+        return jsonify(str(e)), 500
