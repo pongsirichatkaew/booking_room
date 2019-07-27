@@ -1,0 +1,12 @@
+Flask
+requests
+flask-mysql
+flask-cors
+flask-moment
+flask_socketio
+moment
+Werkzeug
+Flask-Mail
+gevent
+gevent-websocket
+jwt

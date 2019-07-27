@@ -35,9 +35,9 @@ mail = Mail(app)
 
 # ------------------------------------------------------
 app.config['MYSQL_DATABASE_USER'] = "root"
-app.config['MYSQL_DATABASE_PASSWORD'] = ""
-app.config['MYSQL_DATABASE_DB'] = 'test'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+app.config['MYSQL_DATABASE_PASSWORD'] = "vpjk.shCyo8bf"
+app.config['MYSQL_DATABASE_DB'] = 'bookingroom_chat'
+app.config['MYSQL_DATABASE_HOST'] = '203.154.135.19'
 
 # ------------------------------------------------------
 # app.config['MYSQL_DATABASE_USER'] = "root"

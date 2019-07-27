@@ -25,7 +25,7 @@ def get_available_time_room(cursor):
                 cursor.execute(time_sql, )
                 columns = [column[0] for column in cursor.description]
                 all_time = toJson(cursor.fetchall(), columns)
-                print(all_time)
+                # print(all_time)
                 arr_time = []
                 for time in all_time:
                     sql = """SELECT r.rid,r.date,r.name,room.rname FROM ticketroom as r
@@ -36,7 +36,7 @@ def get_available_time_room(cursor):
                     columns = [column[0] for column in cursor.description]
                     room_result = toJson(cursor.fetchall(), columns)
                     jsonResult = {"row": time["row"], "time": time["time"]}
-                    print(jsonResult)
+                    # print(jsonResult)
 
                     sql_all_room = """ SELECT rid,rname,rnumber FROM `room` WHERE category='room' AND rstatus='show' """
                     cursor.execute(sql_all_room)
@@ -48,14 +48,14 @@ def get_available_time_room(cursor):
 
                     for room in allroom:
                         arr_allroom.append(room['rid'])
-                    print('alltime', arr_allroom)
+                    # print('alltime', arr_allroom)
 
                     for room in room_result:
                         arr_selectroom.append(room['rid'])
-                    print('selectedtime', arr_selectroom)
+                    # print('selectedtime', arr_selectroom)
 
                     my_room = set(arr_allroom) - set(arr_selectroom)
-                    print('my_room', my_room)
+                    # print('my_room', my_room)
 
                     list_item = []
                     for r in list(my_room):
@@ -69,7 +69,7 @@ def get_available_time_room(cursor):
                     arr_time.append(jsonResult)
 
                     jsonResult.update({"rooms": list(list_item)})
-                    print(arr_time)
+                    # print(arr_time)
                     # return jsonify({"result": jsonResult})`
                 return jsonify({"message": arr_time})
             elif row and len(row) > 0 and date:
@@ -88,7 +88,7 @@ def get_available_time_room(cursor):
                     columns = [column[0] for column in cursor.description]
                     room_result = toJson(cursor.fetchall(), columns)
                     jsonResult = {"row": r, "time": time[0]["time"]}
-                    print(jsonResult)
+                    # print(jsonResult)
 
                     sql_all_room = """ SELECT rid,rname,rnumber FROM `room` WHERE category='room' AND rstatus='show' """
                     cursor.execute(sql_all_room)
@@ -100,14 +100,14 @@ def get_available_time_room(cursor):
 
                     for room in allroom:
                         arr_allroom.append(room['rid'])
-                    print('alltime', arr_allroom)
+                    # print('alltime', arr_allroom)
 
                     for room in room_result:
                         arr_selectroom.append(room['rid'])
-                    print('selectedtime', arr_selectroom)
+                    # print('selectedtime', arr_selectroom)
 
                     my_room = set(arr_allroom) - set(arr_selectroom)
-                    print('my_room', my_room)
+                    # print('my_room', my_room)
 
                     list_item = []
                     for r in list(my_room):
@@ -120,7 +120,7 @@ def get_available_time_room(cursor):
                     arr_time.append(jsonResult)
 
                     jsonResult.update({"rooms": list(list_item)})
-                    print(arr_time)
+                    # print(arr_time)
 
                 return jsonify({"message": arr_time})
 

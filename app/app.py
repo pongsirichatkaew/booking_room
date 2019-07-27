@@ -12,7 +12,7 @@ def hello():
 @app.route('/connect_DB', methods=['GET'])
 @connect_sql()
 def same(cursor):
-    sql = "SELECT * FROM user "
+    sql = "SELECT * FROM room"
     cursor.execute(sql)
     columns = [column[0] for column in cursor.description]
     result = toJson(cursor.fetchall(), columns)

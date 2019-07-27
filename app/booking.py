@@ -21,7 +21,7 @@ def login(cursor):
                 if response:
                     raw = response.text
                     raw = json.loads(raw)
-                    print(raw)
+                    # print(raw)
                     return jsonify({"message": raw})
                 else:
                     return jsonify({"message": "error"}), 401
@@ -34,7 +34,7 @@ def login(cursor):
 @connect_sql()
 def get_all_rooms(cursor):
     try:
-        sql = """SELECT rid,rname as name,rnumber FROM room where rstatus = 'show' and category = 'room' """
+        sql = """SELECT rid,rname as name,rnumber FROM room where rstatus = 'show' and category = 'room'"""
         cursor.execute(sql,)
         columns = [column[0] for column in cursor.description]
         result = toJson(cursor.fetchall(), columns)
@@ -88,7 +88,7 @@ def get_ticket_room(cursor):
             if not date:
                 return jsonify({"message": "Missing parameter"}), 400
             elif not room_id and date:
-                print('date_all_room', date)
+                # print('date_all_room', date)
                 sql = """SELECT t.time, room.rname, r.name , r.department , r.description , r.numberofpeople , r.ps ,r.date
                         FROM ticketroom as r
                         LEFT JOIN time as t
@@ -101,8 +101,8 @@ def get_ticket_room(cursor):
                 result = toJson(cursor.fetchall(), columns)
                 return jsonify({"message": result})
             elif room_id and date:
-                print('date_some_room', date)
-                print('date_some_room', type(room_id))
+                # print('date_some_room', date)
+                # print('date_some_room', type(room_id))
                 sql = """SELECT t.time, room.rname, r.name , r.department , r.description , r.numberofpeople , r.ps ,r.date
                         FROM ticketroom as r
                         LEFT JOIN time as t
@@ -124,7 +124,7 @@ def get_ticket_room(cursor):
 def get_available_ticket_room(cursor):
     try:
         if not request.is_json:
-            print('if not json')
+            # print('if not json')
             return jsonify({"message": "Missing JSON in request"}), 400
         else:
             date = request.json.get('date', None)
@@ -135,7 +135,7 @@ def get_available_ticket_room(cursor):
                 columns = [column[0] for column in cursor.description]
                 allroom = toJson(cursor.fetchall(), columns)
                 arr_room = []
-                print(allroom)
+                # print(allroom)
                 for room in allroom:
                     sql = """SELECT t.time,room.rname,t.row
                             FROM ticketroom as r
@@ -152,7 +152,7 @@ def get_available_ticket_room(cursor):
                     cursor.execute(sql_select_room, (room["rid"],))
                     columns = [column[0] for column in cursor.description]
                     room_number = toJson(cursor.fetchall(), columns)
-                    print(room_number)
+                    # print(room_number)
 
                     jsonResult = {"name": room["rname"], "rid": room["rid"],
                                   "rnumber": room_number[0]['rnumber']}
@@ -184,7 +184,7 @@ def get_available_ticket_room(cursor):
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
-                    print('jsonResult1', jsonResult)
+                    # print('jsonResult1', jsonResult)
                     arr_room.append(jsonResult)
                     # jsonResult.update({"times": list(my_time)})
                     # return jsonify({"result": jsonResult})
@@ -293,7 +293,7 @@ def get_available_vehicle_room(cursor):
                     cursor.execute(sql_select_room, (room["rid"],))
                     columns = [column[0] for column in cursor.description]
                     room_number = toJson(cursor.fetchall(), columns)
-                    print(room_number)
+                    # print(room_number)
 
 
                     jsonResult = {"name": room["rname"], "rid": room["rid"],"rnumber":room_number[0]['rnumber']}
@@ -379,9 +379,9 @@ def get_available_vehicle_room(cursor):
                     # print('json', jsonResult)
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
-                    print('mytime', my_time)
-                    print('mytimelist', list(my_time))
-                    print('listtime', list_time)
+                    # print('mytime', my_time)
+                    # print('mytimelist', list(my_time))
+                    # print('listtime', list_time)
                     # jsonResult.update({"times": list(my_time)})
                     return jsonify({"message": jsonResult})
                 else:
@@ -578,7 +578,7 @@ def post_available_room(cursor):
                 raw = response.text
                 raw = json.loads(raw)
                 if raw['status'] == "fail":
-                    print(raw['status'])
+                    # print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
                     sql_insert = []
@@ -601,7 +601,7 @@ def post_available_room(cursor):
                                 rid, r, col, oneid, code, name, department, email, description, numberofpeople, ps, date))
 
                 for sql in sql_insert:
-                    print(sql)
+                    # print(sql)
                     cursor.execute(sql)
 
                 return jsonify({"message": "Insert Success"})
@@ -641,7 +641,7 @@ def post_available_vehicle(cursor):
                 raw = response.text
                 raw = json.loads(raw)
                 if raw['status'] == "fail":
-                    print(raw['status'])
+                    # print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
                     sql_insert = []
@@ -664,7 +664,7 @@ def post_available_vehicle(cursor):
                                 rid, r, col, oneid, code, name, department, email, description, numberofpeople, ps, date))
 
                 for sql in sql_insert:
-                    print(sql)
+                    # print(sql)
                     cursor.execute(sql)
 
                 return jsonify({"message": "Insert Success"})
@@ -704,7 +704,7 @@ def post_available_projector(cursor):
                 raw = response.text
                 raw = json.loads(raw)
                 if raw['status'] == "fail":
-                    print(raw['status'])
+                    # print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
                     sql_insert = []
@@ -724,9 +724,9 @@ def post_available_projector(cursor):
                         else:
                             sql_insert.append("INSERT INTO `ticketprojector`(`pid`, `row`, `col`, `oneid`, `code`, `name`, `department`, `email`, `description`, `numberofpeople`, `ps`, `date`) VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'); ".format(
                                 pid, r, col, oneid, code, name, department, email, description, numberofpeople, ps, date))
-                            print(sql_insert)
+                            # print(sql_insert)
                 for sql in sql_insert:
-                    print(sql)
+                    # print(sql)
                     cursor.execute(sql)
 
                 return jsonify({"message": "Insert Success"})
