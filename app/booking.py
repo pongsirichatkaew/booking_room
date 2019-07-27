@@ -569,7 +569,7 @@ def post_available_room(cursor):
             ps = request.json.get('ps', None)
             rid = request.json.get('rid', None)
             row = request.json.get('row', None)
-            if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not ps or not rid or not row:
+            if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not rid or not row:
                 return jsonify({"message": "Missing parameter"}), 400
 
             response = requests.get(
