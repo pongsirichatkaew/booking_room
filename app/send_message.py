@@ -94,12 +94,6 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
                                 timeEnd = txtLast[0]
                             mergedTime.append(timeStart + '-' + timeEnd)
                         else:
-                            txtTimeLast = times[index]['time']
-                            txtLast = txtTimeLast.split('-')
-                            if len(txtLast) > 1:
-                                timeEnd = txtLast[1]
-                            else:
-                                timeEnd = txtLast[0]
                             mergedTime.append(times[index]['time'])
 
                 time = timeStart + '-' + timeEnd
@@ -167,8 +161,8 @@ def nextDayThai (val):
 def send_message(cursor):
     try:
         today = date.today() + timedelta(days=1) 
-        nextDay = '2019-07-27'
-        # nextDay = today.strftime("%Y-%m-%d")
+        # nextDay = '2019-07-27'
+        nextDay = today.strftime("%Y-%m-%d")
         dateThai = nextDayThai(nextDay)
         bot_id = "B9f17b544628e5dfa8be224d00e759065"
         tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
@@ -244,7 +238,7 @@ def send_message(cursor):
                     send_msg_email += "</ul>"
                     send_msg_email +="<br>"
 
-                msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreplysotool@gmail.com', recipients = ['p.jirayusakul@gmail.com'])
+                msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreplysotool@gmail.com', recipients = [item['email']])
                 msg.html = send_msg_title + send_msg_email
                 mail.send(msg)
 
