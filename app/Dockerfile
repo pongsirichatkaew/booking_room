@@ -4,5 +4,5 @@ ADD . /code
 WORKDIR /code
 ADD requirements.txt /code
 RUN pip install -r requirements.txt
-EXPOSE 7777
+EXPOSE 5000
 CMD ["python","app.py"]
