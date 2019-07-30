@@ -17,7 +17,7 @@ def login(cursor):
                 return jsonify({"message": "Missing parameter"}), 400
             else:
                 response = requests.get(
-                    'https://chat-develop.one.th:8007/checkSatff/'+staff_id+'/'+oneid)
+                    'https://chat-develop.one.th:8007/checkStaff/'+staff_id+'/'+oneid)
                 if response:
                     raw = response.text
                     raw = json.loads(raw)
@@ -573,7 +573,7 @@ def post_available_room(cursor):
                 return jsonify({"message": "Missing parameter"}), 400
 
             response = requests.get(
-                'https://chat-develop.one.th:8007/checkSatff/'+code+'/'+oneid)
+                'https://chat-develop.one.th:8007/checkStaff/'+code+'/'+oneid)
             if response:
                 raw = response.text
                 raw = json.loads(raw)
@@ -636,7 +636,7 @@ def post_available_vehicle(cursor):
                 return jsonify({"message": "Missing parameter"}), 400
 
             response = requests.get(
-                'https://chat-develop.one.th:8007/checkSatff/'+code+'/'+oneid)
+                'https://chat-develop.one.th:8007/checkStaff/'+code+'/'+oneid)
             if response:
                 raw = response.text
                 raw = json.loads(raw)
@@ -699,7 +699,7 @@ def post_available_projector(cursor):
                 return jsonify({"message": "Missing parameter"}), 400
 
             response = requests.get(
-                'https://chat-develop.one.th:8007/checkSatff/'+code+'/'+oneid)
+                'https://chat-develop.one.th:8007/checkStaff/'+code+'/'+oneid)
             if response:
                 raw = response.text
                 raw = json.loads(raw)
