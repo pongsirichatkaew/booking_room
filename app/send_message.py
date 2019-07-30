@@ -132,7 +132,7 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
             # }
             payload = {
                 "bot_id" : bot_id,
-                "key_search" : 'phatthakarn@one.th'
+                "key_search" : result['oneid']
             }
             try:
                 response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
