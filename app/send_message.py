@@ -26,11 +26,23 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
         """
     elif tabel == 'ticketroom':
         sql_step1 = """
-        SELECT r.name,r.oneid,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r WHERE Date(r.date) = %s GROUP BY r.name
+        SELECT r.name,r.oneid,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND room.category = 'room' GROUP BY r.name
         """
         sql_step2 = """
         SELECT room.rname AS name,room.category,r.row,r.rid AS id FROM ticketroom as r
-        LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND r.name = %s GROUP BY r.rid
+        LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND r.name = %s AND room.category = 'room' GROUP BY r.rid
+        """
+        sql_step3 = """
+        SELECT t.time, t.row FROM ticketroom as r
+        LEFT JOIN time as t ON r.row = t.row WHERE Date(r.date) = %s AND r.rid = %s ORDER BY r.row ASC
+        """
+    elif tabel == 'ticketvehicle':
+        sql_step1 = """
+        SELECT r.name,r.oneid,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND room.category = 'vehicle' GROUP BY r.name
+        """
+        sql_step2 = """
+        SELECT room.rname AS name,room.category,r.row,r.rid AS id FROM ticketroom as r
+        LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND r.name = %s AND room.category = 'vehicle' GROUP BY r.rid
         """
         sql_step3 = """
         SELECT t.time, t.row FROM ticketroom as r
@@ -114,9 +126,13 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
             })
 
         if result['oneid'] is not None:
+            # payload = {
+            #     "bot_id" : bot_id,
+            #     "key_search" : result['oneid']
+            # }
             payload = {
                 "bot_id" : bot_id,
-                "key_search" : result['oneid']
+                "key_search" : 'phatthakarn@one.th'
             }
             try:
                 response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
@@ -169,14 +185,19 @@ def send_message(cursor):
 
         ticketprojector = format_json_for_send_message(nextDay, 'ticketprojector', bot_id, tokenBot)
         ticketroom = format_json_for_send_message(nextDay, 'ticketroom', bot_id, tokenBot)
+        ticketvehicle = format_json_for_send_message(nextDay, 'ticketvehicle', bot_id, tokenBot)
         result = []
         for roomList in ticketroom:
             result.append(roomList)
         
+        for vehicleList in ticketvehicle:
+            result.append(vehicleList)
+
         for deviceLists in ticketprojector:
             result.append(deviceLists)
 
         for item in result:
+            # print('test')
             if item['user_id'] is not None:
                 categoryTitle = ''
                 timeSelec = ''
@@ -238,7 +259,7 @@ def send_message(cursor):
                     send_msg_email += "</ul>"
                     send_msg_email +="<br>"
 
-                msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreplysotool@gmail.com', recipients = [item['email']])
+                msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreply.booking@inet.co.th', recipients = [item['email']])
                 msg.html = send_msg_title + send_msg_email
                 mail.send(msg)
 

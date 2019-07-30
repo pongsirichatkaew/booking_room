@@ -17,19 +17,19 @@ app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
 # --------------------------mail------------------------
-# app.config['MAIL_SERVER'] = 'mailtx.inet.co.th'
-# app.config['MAIL_PORT'] = 25
-# app.config['MAIL_USERNAME'] = 'noreply.booking@inet.co.th'
-# app.config['MAIL_PASSWORD'] = ''
-# app.config['MAIL_USE_TLS'] = False
-# app.config['MAIL_USE_SSL'] = False
-
-app.config['MAIL_SERVER']='smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'noreplysotool@gmail.com'
-app.config['MAIL_PASSWORD'] = 'sotool2019'
+app.config['MAIL_SERVER'] = 'mailtx.inet.co.th'
+app.config['MAIL_PORT'] = 25
+app.config['MAIL_USERNAME'] = 'noreply.booking@inet.co.th'
+app.config['MAIL_PASSWORD'] = ''
 app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_SSL'] = False
+
+# app.config['MAIL_SERVER']='smtp.gmail.com'
+# app.config['MAIL_PORT'] = 465
+# app.config['MAIL_USERNAME'] = 'noreplysotool@gmail.com'
+# app.config['MAIL_PASSWORD'] = 'sotool2019'
+# app.config['MAIL_USE_TLS'] = False
+# app.config['MAIL_USE_SSL'] = True
 
 mail = Mail(app)
 
@@ -42,7 +42,7 @@ app.config['MYSQL_DATABASE_HOST'] = '203.154.135.19'
 # ------------------------------------------------------
 # app.config['MYSQL_DATABASE_USER'] = "root"
 # app.config['MYSQL_DATABASE_PASSWORD'] = ""
-# app.config['MYSQL_DATABASE_DB'] = 'booking_meeting'
+# app.config['MYSQL_DATABASE_DB'] = 'bookingroom_chat'
 # app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 # ------------------------------------------------------
