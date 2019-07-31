@@ -8,6 +8,11 @@ import requests
 import base64
 import json
 import jwt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from email.utils import COMMASPACE , formatdate
 
 app = Flask(__name__)
 mail = Mail(app)
@@ -34,10 +39,10 @@ app.config['MAIL_USE_SSL'] = False
 mail = Mail(app)
 
 # ------------------------------------------------------
-app.config['MYSQL_DATABASE_USER'] = "root"
-app.config['MYSQL_DATABASE_PASSWORD'] = "vpjk.shCyo8bf"
-app.config['MYSQL_DATABASE_DB'] = 'bookingroom_chat'
-app.config['MYSQL_DATABASE_HOST'] = '203.154.135.19'
+# app.config['MYSQL_DATABASE_USER'] = "root"
+# app.config['MYSQL_DATABASE_PASSWORD'] = "vpjk.shCyo8bf"
+# app.config['MYSQL_DATABASE_DB'] = 'bookingroom_chat'
+# app.config['MYSQL_DATABASE_HOST'] = '203.154.135.19'
 
 # ------------------------------------------------------
 # app.config['MYSQL_DATABASE_USER'] = "root"
@@ -46,10 +51,10 @@ app.config['MYSQL_DATABASE_HOST'] = '203.154.135.19'
 # app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 # ------------------------------------------------------
-# app.config['MYSQL_DATABASE_USER'] = "root"
-# app.config['MYSQL_DATABASE_PASSWORD'] = "l^9i@xib,kIlkily,ryoTN"
-# app.config['MYSQL_DATABASE_DB'] = 'bookingroom_db'
-# app.config['MYSQL_DATABASE_HOST'] = '203.150.57.159'
+app.config['MYSQL_DATABASE_USER'] = "root"
+app.config['MYSQL_DATABASE_PASSWORD'] = "l^9i@xib,kIlkily,ryoTN"
+app.config['MYSQL_DATABASE_DB'] = 'bookingroom_db'
+app.config['MYSQL_DATABASE_HOST'] = '203.150.57.159'
 
 mysql = MySQL()
 mysql.init_app(app)
