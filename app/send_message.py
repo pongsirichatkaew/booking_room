@@ -4,6 +4,12 @@ import ast
 from datetime import date
 from datetime import timedelta
 import json
+import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from email.utils import COMMASPACE , formatdate
 
 @connect_sql()
 def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
@@ -178,11 +184,15 @@ def send_message(cursor):
     try:
         today = date.today() + timedelta(days=1) 
         # nextDay = '2019-07-27'
+        # nextDay = '2019-07-01'
         nextDay = today.strftime("%Y-%m-%d")
         dateThai = nextDayThai(nextDay)
         bot_id = "B9f17b544628e5dfa8be224d00e759065"
         tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
-
+        send_type = ''
+        send_to_email = ''
+        send_to_oneid = ''
+        dateTime = datetime.datetime.now()
         ticketprojector = format_json_for_send_message(nextDay, 'ticketprojector', bot_id, tokenBot)
         ticketroom = format_json_for_send_message(nextDay, 'ticketroom', bot_id, tokenBot)
         ticketvehicle = format_json_for_send_message(nextDay, 'ticketvehicle', bot_id, tokenBot)
@@ -196,8 +206,10 @@ def send_message(cursor):
         for deviceLists in ticketprojector:
             result.append(deviceLists)
 
+        sql = "INSERT INTO `log_send_message` (`log_id`, `send_to_email`, `send_to_oneid`, `send_type`, `response`, `date`) VALUES (NULL, %s, %s, %s, %s, %s)"
         for item in result:
-            # print('test')
+            send_to_email = item['email']
+            send_to_oneid = item['oneid']
             if item['user_id'] is not None:
                 categoryTitle = ''
                 timeSelec = ''
@@ -228,8 +240,16 @@ def send_message(cursor):
                             "type" : "text",
                             "message" : send_msg_oneChat_title + send_msg_oneChat
                         }
-                response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
-                headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
+                send_type = 'one_id'
+                dateTime = datetime.datetime.now()
+                try:
+                    response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+                    headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
+                    response = response_msg['status']
+                    cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
+                except expression as identifier:
+                    response = 'error'
+                    cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
 
             if item['email'] is not None:
                 categoryTitle = ''
@@ -258,12 +278,34 @@ def send_message(cursor):
                         (idx + 1),itemticket['name'],item['description'],item['numberofpeople'],item['ps'], timeSelec)
                     send_msg_email += "</ul>"
                     send_msg_email +="<br>"
-
-                msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreply.booking@inet.co.th', recipients = [item['email']])
-                msg.html = send_msg_title + send_msg_email
-                mail.send(msg)
-
+                send_type = 'email'
+                dateTime = datetime.datetime.now()
+                try:
+                    text = send_msg_title + send_msg_email
+                    server="mailtx.inet.co.th"
+                    send_from = 'noreply.booking@inet.co.th'
+                    msg = MIMEMultipart()
+                    msg['From'] = send_from
+                    msg['To'] = send_to_email
+                    msg['Date'] = formatdate(localtime=True)
+                    msg['Subject'] = 'แจ้งเตือนการจองห้องประชุมและรถตู้'
+                    msg.attach(MIMEText(text, "html","utf-8"))
+                    smtp = smtplib.SMTP(server)
+                    smtp.sendmail(send_from, send_to_email, msg.as_string())
+                    smtp.close()
+                    # msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreply.booking@inet.co.th', recipients = [item['email']])
+                    # msg.html = send_msg_title + send_msg_email
+                    # mail.send(msg)
+                    response = 'success'
+                    cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
+                except Exception as e:
+                    current_app.logger.info(e)
+                    response = 'error'
+                    cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
         return jsonify(result)
     except Exception as e:
         current_app.logger.info(e)
+        response = 'error'
+        sql = "INSERT INTO `log_send_message` (`log_id`, `send_to_email`, `send_to_oneid`, `send_type`, `response`, `date`) VALUES (NULL, %s, %s, %s, %s, %s)"
+        cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
         return jsonify(str(e)), 500
