@@ -17,9 +17,10 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
     sql_step2 = ''
     sql_step3 = ''
     category = ''
+    sql_find_twin = "SELECT r.date ,r.name AS name_room, r.email AS email_room, r.oneid AS oneid_room, p.name AS name_p, p.email AS email_p, p.oneid AS oneid_p FROM `ticketroom` AS r LEFT JOIN ticketprojector AS p ON r.name = p.name WHERE r.name = %s AND r.date = %s"
     if tabel == 'ticketprojector':
         sql_step1 = """
-        SELECT r.code,r.oneid,r.name,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketprojector as r 
+        SELECT r.code,r.oneid,r.name,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketprojector as r
         WHERE Date(r.date) = %s GROUP BY r.name
         """
         sql_step2 = """
@@ -30,6 +31,7 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
         SELECT t.time, t.row FROM ticketprojector as r
         LEFT JOIN time as t ON r.row = t.row WHERE Date(r.date) = %s AND r.pid = %s ORDER BY r.row ASC
         """
+
     elif tabel == 'ticketroom':
         sql_step1 = """
         SELECT r.name,r.oneid,r.department,r.email,r.description,r.numberofpeople,r.ps,r.date FROM ticketroom as r LEFT JOIN room as room ON r.rid = room.rid WHERE Date(r.date) = %s AND room.category = 'room' GROUP BY r.name
@@ -59,6 +61,40 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
     cursor.execute(sql, nextDay)
     columns = [column[0] for column in cursor.description]
     results = toJson(cursor.fetchall(), columns)
+    if len(results) != 0:
+        name = results[0]['name']
+        sql = sql_find_twin
+        cursor.execute(sql, (name, nextDay))
+        columns = [column[0] for column in cursor.description]
+        findEmail = toJson(cursor.fetchall(), columns)
+        email = None
+        if len(findEmail) != 0:
+            for emailUser in findEmail:
+                if (emailUser['email_room'] is not None) and (emailUser['email_room'] != ''):
+                    email = emailUser['email_room']
+                    break
+                if (emailUser['email_p'] is not None) and (emailUser['email_p'] != ''):
+                    email = emailUser['email_p']
+                    break
+
+
+        results[0]['email'] = email
+
+        sql = sql_find_twin
+        cursor.execute(sql, (name, nextDay))
+        columns = [column[0] for column in cursor.description]
+        findOneid = toJson(cursor.fetchall(), columns)
+        oneid = None
+        if len(findOneid) != 0:
+            for oneidUser in findOneid:
+                if (oneidUser['oneid_room'] is not None) and (oneidUser['oneid_room'] != ''):
+                    oneid = oneidUser['oneid_room']
+                    break
+                if (oneidUser['oneid_p'] is not None) and (oneidUser['oneid_p'] != ''):
+                    oneid = oneidUser['oneid_p']
+                    break
+
+        results[0]['oneid'] = oneid
 
     for result in results:
         sql = sql_step2
@@ -132,10 +168,6 @@ def format_json_for_send_message (cursor, nextDay, tabel, bot_id, tokenBot):
             })
 
         if result['oneid'] is not None:
-            # payload = {
-            #     "bot_id" : bot_id,
-            #     "key_search" : result['oneid']
-            # }
             payload = {
                 "bot_id" : bot_id,
                 "key_search" : result['oneid']
@@ -182,24 +214,24 @@ def nextDayThai (val):
 @connect_sql()
 def send_message(cursor):
     try:
-        today = date.today() + timedelta(days=1) 
-        # nextDay = '2019-07-27'
-        # nextDay = '2019-07-01'
-        nextDay = today.strftime("%Y-%m-%d")
+        today = date.today() + timedelta(days=1)
+        nextDay = '2019-08-03'
+        # nextDay = today.strftime("%Y-%m-%d")
         dateThai = nextDayThai(nextDay)
-        bot_id = "B9f17b544628e5dfa8be224d00e759065"
+        bot_id = "Bbc41524dcbc3515ebc3cfd36a1b4ac81"
         tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
         send_type = ''
         send_to_email = ''
         send_to_oneid = ''
         dateTime = datetime.datetime.now()
+
         ticketprojector = format_json_for_send_message(nextDay, 'ticketprojector', bot_id, tokenBot)
         ticketroom = format_json_for_send_message(nextDay, 'ticketroom', bot_id, tokenBot)
         ticketvehicle = format_json_for_send_message(nextDay, 'ticketvehicle', bot_id, tokenBot)
         result = []
         for roomList in ticketroom:
             result.append(roomList)
-        
+
         for vehicleList in ticketvehicle:
             result.append(vehicleList)
 
@@ -213,7 +245,7 @@ def send_message(cursor):
             if item['user_id'] is not None:
                 categoryTitle = ''
                 timeSelec = ''
-                send_msg_oneChat_title = """พรุ่งนี้วันที่ {} คุณ {} ได้ทำการจอง{} \n""".format(dateThai,item['name'],categoryTitle)
+                send_msg_oneChat_title = ""
                 send_msg_oneChat = ''
                 for idx, itemticket in enumerate(item['room']):
                     if itemticket['category'] == 'room':
@@ -222,6 +254,7 @@ def send_message(cursor):
                         categoryTitle ='รถตู้'
                     else:
                         categoryTitle ='อุปกรณ์'
+                    send_msg_oneChat_title = """พรุ่งนี้วันที่ {} {} ได้ทำการจอง{} \n""".format(dateThai,item['name'],categoryTitle)
                     timeSelec = 'เวลา: \n'
                     for index in range(len(itemticket['mergedTime'])):
                         timeSelec += str(itemticket['mergedTime'][index])
@@ -247,14 +280,16 @@ def send_message(cursor):
                     headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
                     response = response_msg['status']
                     cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
-                except expression as identifier:
+                except Exception as e:
+                    current_app.logger.info(e)
                     response = 'error'
                     cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
+
 
             if item['email'] is not None:
                 categoryTitle = ''
                 timeSelec = ''
-                send_msg_title = """พรุ่งนี้วันที่ {} คุณ {} ได้ทำการจองตามรายการดังนี้ <br><br>""".format(dateThai,item['name'])
+                send_msg_title = "พรุ่งนี้วันที่ " + dateThai + " คุณ " + item['name'] + " ได้ทำการจองตามรายการ ดังนี้ <br><br>"
                 send_msg_email = ''
                 for idx, itemticket in enumerate(item['room']):
                     if itemticket['category'] == 'room':
@@ -273,39 +308,40 @@ def send_message(cursor):
                     <li>{}. {} </li>
                     <li>เหตุผล: {} </li>
                     <li>จำนวนคน: {} </li>
-                    <li>หมายเหตุ: {} </li> 
+                    <li>หมายเหตุ: {} </li>
                     <li>{} </li>""".format(
                         (idx + 1),itemticket['name'],item['description'],item['numberofpeople'],item['ps'], timeSelec)
                     send_msg_email += "</ul>"
                     send_msg_email +="<br>"
+
+                server="mailtx.inet.co.th"
+                send_from = 'noreply.booking@inet.co.th'
+                send_to = item['email']
+                subject = 'แจ้งเตือนการจองห้องประชุมและรถตู้'
+                text = send_msg_title + send_msg_email
+
+                msg = MIMEMultipart()
+                msg['From'] = send_from
+                msg['To'] = send_to
+                msg['Date'] = formatdate(localtime=True)
+                msg['Subject'] = subject
+                msg.attach(MIMEText(text, "html","utf-8"))
                 send_type = 'email'
                 dateTime = datetime.datetime.now()
                 try:
-                    text = send_msg_title + send_msg_email
-                    server="mailtx.inet.co.th"
-                    send_from = 'noreply.booking@inet.co.th'
-                    msg = MIMEMultipart()
-                    msg['From'] = send_from
-                    msg['To'] = send_to_email
-                    msg['Date'] = formatdate(localtime=True)
-                    msg['Subject'] = 'แจ้งเตือนการจองห้องประชุมและรถตู้'
-                    msg.attach(MIMEText(text, "html","utf-8"))
                     smtp = smtplib.SMTP(server)
-                    smtp.sendmail(send_from, send_to_email, msg.as_string())
+                    smtp.sendmail(send_from, send_to, msg.as_string())
                     smtp.close()
-                    # msg = Message('แจ้งเตือนการจองห้องประชุมและรถตู้', sender = 'noreply.booking@inet.co.th', recipients = [item['email']])
-                    # msg.html = send_msg_title + send_msg_email
-                    # mail.send(msg)
                     response = 'success'
                     cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
                 except Exception as e:
                     current_app.logger.info(e)
                     response = 'error'
                     cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
+
         return jsonify(result)
     except Exception as e:
         current_app.logger.info(e)
         response = 'error'
         sql = "INSERT INTO `log_send_message` (`log_id`, `send_to_email`, `send_to_oneid`, `send_type`, `response`, `date`) VALUES (NULL, %s, %s, %s, %s, %s)"
         cursor.execute(sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
-        return jsonify(str(e)), 500
