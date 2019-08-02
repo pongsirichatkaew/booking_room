@@ -1,4 +1,5 @@
 from Config.config import *
+from send_message import *
 import ast
 import datetime
 
@@ -288,15 +289,14 @@ def get_available_vehicle_room(cursor):
                     columns = [column[0] for column in cursor.description]
                     room_result = toJson(cursor.fetchall(), columns)
 
-
                     sql_select_room = """SELECT rnumber from room WHERE rid = %s"""
                     cursor.execute(sql_select_room, (room["rid"],))
                     columns = [column[0] for column in cursor.description]
                     room_number = toJson(cursor.fetchall(), columns)
                     # print(room_number)
 
-
-                    jsonResult = {"name": room["rname"], "rid": room["rid"],"rnumber":room_number[0]['rnumber']}
+                    jsonResult = {
+                        "name": room["rname"], "rid": room["rid"], "rnumber": room_number[0]['rnumber']}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -348,7 +348,8 @@ def get_available_vehicle_room(cursor):
                     cursor.execute(sql, (date, vehicle_id,))
                     columns = [column[0] for column in cursor.description]
                     result = toJson(cursor.fetchall(), columns)
-                    jsonResult = {"name": room_name, "rid": vehicle_id,"rnumber":room_number}
+                    jsonResult = {"name": room_name,
+                                  "rid": vehicle_id, "rnumber": room_number}
                     sql_all_time = """SELECT time,row FROM `time`"""
                     cursor.execute(sql_all_time)
                     columns = [column[0] for column in cursor.description]
@@ -603,6 +604,89 @@ def post_available_room(cursor):
                 for sql in sql_insert:
                     # print(sql)
                     cursor.execute(sql)
+
+                dateThai = nextDayThai(date)
+                print('dateThai', dateThai)
+                bot_id = "B9f17b544628e5dfa8be224d00e759065"
+                tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
+                send_type = ''
+                send_to_email = ''
+                send_to_oneid = ''
+                user_id = ''
+
+                sql_all_time = """ SELECT row,time from time """
+                cursor.execute(sql_all_time)
+                columns = [column[0] for column in cursor.description]
+                times = toJson(cursor.fetchall(), columns)
+
+                ## Merge time ##
+                strTime = ''
+                strTmp = ''
+                strFirst = ''
+                strSecond = ''
+                row.sort()
+                for index, time in enumerate(times):
+                    for i, r in enumerate(row):
+                        if(time['row'] == r):
+                            strTmp = time['time'].split('-')
+                            if(len(strTmp) > 1):
+                                if(strTmp[1] == strSecond):
+                                    pass
+                                else:
+                                    strFirst = strTmp[0]
+                                    strSecond = strTmp[1]
+                                if(i+1 < len(row)):
+                                    if(times[index+1]['row'] == row[i+1]):
+                                        if(len(times[index + 1]['time'].split('-')) > 1):
+                                            strSecond = times[index +
+                                                              1]['time'].split('-')[1]
+                                    else:
+                                        strTime = strTime + strFirst + "-" + strSecond + ",\n"
+                            else:
+                                if(times[index-1]['row'] == row[i-1]):
+                                    pass
+                                else:
+                                    strFirst = ''
+                                strSecond = strTmp[0]
+                strTime = strTime + strFirst + "-" + strSecond
+                print('strTime', strTime)
+
+                name_split = name.split('.')                    
+                send_msg_oneChat_title = """คุณ {} ได้จองห้องประชุม ในวันที่ {}\n""".format(name_split[1],dateThai)
+                print(send_msg_oneChat_title)
+
+                ## Select Room Name ##
+                sql_select_room = """ SELECT rname FROM `room` WHERE rid = %s """
+                cursor.execute(sql_select_room, (rid))
+                columns = [column[0] for column in cursor.description]
+                room = toJson(cursor.fetchall(), columns)
+                send_msg_oneChat = """\n{}ห้อง: {} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{} \n\nหากต้องการยกเลิกหรือแก้ไข\nคลิ้กที่นี่ https://intranet.inet.co.th/index.php/MainController/bookingroom/""".format(
+                    "", room[0]['rname'], description, numberofpeople, ps, strTime)
+                print(send_msg_oneChat)
+
+                payload = {
+                    "bot_id" : bot_id,
+                    "key_search" : oneid
+                }
+
+                ## GET user_id
+                response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
+                headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
+                if response['status'] != 'fail':
+                    user_id = response['friend']['user_id']                
+
+                ## Send One chat
+                payload_msg =  {
+                                "to" : user_id,
+                                "bot_id" : bot_id,
+                                "type" : "text",
+                                "message" : send_msg_oneChat_title + send_msg_oneChat
+                            }
+                send_type = 'one_id'
+                dateTime = datetime.datetime.now()
+                response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+                headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
+
 
                 return jsonify({"message": "Insert Success"})
             else:
