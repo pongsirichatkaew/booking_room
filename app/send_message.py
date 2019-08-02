@@ -245,7 +245,7 @@ def send_message(cursor):
             if item['user_id'] is not None:
                 categoryTitle = ''
                 timeSelec = ''
-                send_msg_oneChat_title = ""
+                send_msg_oneChat_title = """พรุ่งนี้วันที่ {} คุณ {} ได้ทำการจอง{} \n""".format(dateThai,item['name'],categoryTitle)
                 send_msg_oneChat = ''
                 for idx, itemticket in enumerate(item['room']):
                     if itemticket['category'] == 'room':
@@ -254,7 +254,6 @@ def send_message(cursor):
                         categoryTitle ='รถตู้'
                     else:
                         categoryTitle ='อุปกรณ์'
-                    send_msg_oneChat_title = """พรุ่งนี้วันที่ {} {} ได้ทำการจอง{} \n""".format(dateThai,item['name'],categoryTitle)
                     timeSelec = 'เวลา: \n'
                     for index in range(len(itemticket['mergedTime'])):
                         timeSelec += str(itemticket['mergedTime'][index])
