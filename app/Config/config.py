@@ -1,6 +1,5 @@
 from flask import Flask, request, Response, jsonify, current_app, abort, send_from_directory
 from flask_cors import CORS, cross_origin
-from flask_mail import Mail, Message
 from flaskext.mysql import MySQL
 from functools import wraps
 from datetime import datetime, timedelta
@@ -15,28 +14,12 @@ from email.mime.application import MIMEApplication
 from email.utils import COMMASPACE , formatdate
 
 app = Flask(__name__)
-mail = Mail(app)
 # ----------------for not sort key when send by JSONTIFY
 app.config['JSON_SORT_KEYS'] = False
 # ------------------------------------------------------
 CORS(app)
 
-# --------------------------mail------------------------
-app.config['MAIL_SERVER'] = 'mailtx.inet.co.th'
-app.config['MAIL_PORT'] = 25
-app.config['MAIL_USERNAME'] = 'noreply.booking@inet.co.th'
-app.config['MAIL_PASSWORD'] = ''
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = False
 
-# app.config['MAIL_SERVER']='smtp.gmail.com'
-# app.config['MAIL_PORT'] = 465
-# app.config['MAIL_USERNAME'] = 'noreplysotool@gmail.com'
-# app.config['MAIL_PASSWORD'] = 'sotool2019'
-# app.config['MAIL_USE_TLS'] = False
-# app.config['MAIL_USE_SSL'] = True
-
-mail = Mail(app)
 
 # ------------------------------------------------------
 # app.config['MYSQL_DATABASE_USER'] = "root"

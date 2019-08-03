@@ -550,6 +550,210 @@ def get_available_projector(cursor):
         current_app.logger.info(e)
         return jsonify({"message": str(e)}), 500
 
+@connect_sql()
+def timeMerge(cursor,row):
+    sql_all_time = """ SELECT row,time from time """
+    cursor.execute(sql_all_time)
+    columns = [column[0] for column in cursor.description]
+    times = toJson(cursor.fetchall(), columns)
+
+    ## Merge time ##
+    strTime = ''
+    strTmp = ''
+    strFirst = ''
+    strSecond = ''
+    row.sort()
+    for index, time in enumerate(times):
+        for i, r in enumerate(row):
+            if(time['row'] == r):
+                strTmp = time['time'].split('-')
+                if(len(strTmp) > 1):
+                    if(strTmp[1] == strSecond):
+                        pass
+                    else:
+                        strFirst = strTmp[0]
+                        strSecond = strTmp[1]
+                    if(i+1 < len(row)):
+                        if(times[index+1]['row'] == row[i+1]):
+                            if(len(times[index + 1]['time'].split('-')) > 1):
+                                strSecond = times[index +1]['time'].split('-')[1]
+                        else:
+                            strTime = strTime + strFirst + "-" + strSecond + ",\n"
+                else:
+                    if(times[index-1]['row'] == row[i-1]):
+                        pass
+                    else:
+                        strFirst = ''
+                    strSecond = strTmp[0]
+    strTime = strTime + strFirst + "-" + strSecond
+    return strTime
+    # print('strTime', strTime)
+
+@connect_sql()
+def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,filter):
+    try:
+        dateThai = nextDayThai(date)
+        bot_id = "B9f17b544628e5dfa8be224d00e759065"
+        tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
+        send_type = ''
+        send_to_email = ''
+        send_to_oneid = ''
+        user_id = ''
+        
+        headerTitle = ''
+        messageTitle = ''
+        if(filter == 'room'):
+            headerTitle = 'ห้องประชุม'
+            messageTitle = 'ห้อง:'
+        elif(filter == 'vehicle'):
+            headerTitle = 'รถตู้'
+            messageTitle = ''
+        elif(filter == 'projector'):
+            headerTitle = 'อุปกรณ์'
+            messageTitle = ''
+
+
+        strTime = timeMerge(row)
+
+        name_split = name.split('.')
+        send_msg_oneChat_title = """คุณ {} ได้จอง{} ในวันที่ {}\n""".format(name_split[1], headerTitle, dateThai)
+        
+        room = None
+        ## Select Room Name ##
+        if(filter == 'projector'):
+            sql_select_room = """ SELECT pname AS rname FROM `projector` WHERE pid = %s """
+            cursor.execute(sql_select_room, (rid))
+            columns = [column[0] for column in cursor.description]
+            room = toJson(cursor.fetchall(), columns)
+        else:
+            sql_select_room = """ SELECT rname FROM `room` WHERE rid = %s """
+            cursor.execute(sql_select_room, (rid))
+            columns = [column[0] for column in cursor.description]
+            room = toJson(cursor.fetchall(), columns)
+
+        send_msg_oneChat = """\n{}{} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{} \n\nหากต้องการยกเลิกหรือแก้ไข\nคลิ้กที่นี่ https://intranet.inet.co.th/index.php/MainController/bookingroom/""".format(messageTitle, room[0]['rname'], description, numberofpeople, ps, strTime)
+        print(send_msg_oneChat)
+        payload = {
+                "bot_id": bot_id,
+                "key_search": oneid
+            }
+
+        # GET user_id
+        response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
+                                                    headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
+        if response['status'] != 'fail':
+            user_id = response['friend']['user_id']
+
+        # Send One chat
+        payload_msg =  {
+                            "to" : user_id,
+                            "bot_id" : bot_id,
+                            "type" : "text",
+                            "message" : send_msg_oneChat_title + send_msg_oneChat
+                        }
+        send_type = 'one_id'
+        dateTime = datetime.datetime.now()
+        response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+        headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
+        return response_msg
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
+        return jsonify(str(e))
+
+@connect_sql()
+def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,filter):
+    dateThai = nextDayThai(date)
+    name_split = name.split('.')
+    strTime = timeMerge(row)
+
+    room = None
+    ## Select Room Name ##
+    if(filter == 'projector'):
+        sql_select_room = """ SELECT pname AS rname FROM `projector` WHERE pid = %s """
+        cursor.execute(sql_select_room, (rid))
+        columns = [column[0] for column in cursor.description]
+        room = toJson(cursor.fetchall(), columns)
+    else:
+        sql_select_room = """ SELECT rname FROM `room` WHERE rid = %s """
+        cursor.execute(sql_select_room, (rid))
+        columns = [column[0] for column in cursor.description]
+        room = toJson(cursor.fetchall(), columns)
+
+    headerTitle = ''
+    messageTitle = ''
+    if(filter == 'room'):
+        headerTitle = 'ห้องประชุม'
+        messageTitle = 'ห้อง:'
+    elif(filter == 'vehicle'):
+        headerTitle = 'รถตู้'
+        messageTitle = ''
+    elif(filter == 'projector'):
+        headerTitle = 'อุปกรณ์'
+        messageTitle = ''
+
+    send_msg_title = "พรุ่งนี้วันที่ " + dateThai + " คุณ " + \
+    name_split[1] + " ได้ทำการจอง" + \
+    headerTitle + " ดังนี้ <br><br>"
+    send_msg_email = ''
+    timeSelec = 'เวลา: <br>'
+    # timeSelec += '<ul style="padding-left: 15px;">'
+    # for index in range(len(itemticket['mergedTime'])):
+    #     timeSelec += '<li>' + \
+    #     str(itemticket['mergedTime'][index]) + '</li>'
+    # timeSelec += '</ul>'
+    timeSelec += strTime
+    send_msg_email += """ <ul style="list-style-type:none; padding: 0; margin: 0;"> """
+    send_msg_email += """
+    <li>{} {} </li>
+    <li>เหตุผล: {} </li>
+    <li>จำนวนคน: {} </li>
+    <li>หมายเหตุ: {} </li>
+    <li>{} </li>""".format(messageTitle, room[0]['rname'], description, numberofpeople, ps, timeSelec)
+    send_msg_email += "</ul>"
+    send_msg_email += "<br>"
+
+    send_msg_email += "หากต้องการยกเลิกหรือแก้ไข\n <a href='https://intranet.inet.co.th/index.php/MainController/bookingroom/'>คลิ้กที่นี่</a>"
+    # server = "mailtx.inet.co.th"
+    server = "smtp.gmail.com"
+    send_from = 'noreply.booking@inet.co.th'
+    send_to = email
+    subject = 'แจ้งเตือนการจองห้องประชุมและรถตู้'
+
+    text = send_msg_title + send_msg_email
+    # print('text', text)
+
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = send_to
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(text, "html", "utf-8"))
+    send_type = 'email'
+    dateTime = datetime.datetime.now()
+    response = ''
+    try:
+        smtp = smtplib.SMTP(server)
+        # smtp = smtplib.SMTP(server,587)
+
+        ####
+        # smtp.ehlo()
+        # smtp.starttls()
+        # smtp.login('pongsirichatkaew@gmail.com', 'bank2538')
+        ###
+
+        smtp.sendmail(send_from, send_to, msg.as_string())
+        smtp.close()
+        response = 'success'
+        # cursor.execute(
+        #     sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
+    except Exception as e:
+        current_app.logger.info(e)
+        response = 'error'
+        return str(e)
+        # cursor.execute(
+        #     sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
+    return response
 
 @app.route('/api/v1/insert_room', methods=['POST'])
 @connect_sql()
@@ -563,6 +767,7 @@ def post_available_room(cursor):
             date = request.json.get('date', None)
             department = request.json.get('department', None)
             description = request.json.get('description', None)
+            # email = request.json.get('email', None)
             email = request.json.get('email', None)
             name = request.json.get('name', None)
             numberofpeople = request.json.get('numberofpeople', None)
@@ -605,89 +810,10 @@ def post_available_room(cursor):
                     # print(sql)
                     cursor.execute(sql)
 
-                dateThai = nextDayThai(date)
-                print('dateThai', dateThai)
-                bot_id = "B9f17b544628e5dfa8be224d00e759065"
-                tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
-                send_type = ''
-                send_to_email = ''
-                send_to_oneid = ''
-                user_id = ''
-
-                sql_all_time = """ SELECT row,time from time """
-                cursor.execute(sql_all_time)
-                columns = [column[0] for column in cursor.description]
-                times = toJson(cursor.fetchall(), columns)
-
-                ## Merge time ##
-                strTime = ''
-                strTmp = ''
-                strFirst = ''
-                strSecond = ''
-                row.sort()
-                for index, time in enumerate(times):
-                    for i, r in enumerate(row):
-                        if(time['row'] == r):
-                            strTmp = time['time'].split('-')
-                            if(len(strTmp) > 1):
-                                if(strTmp[1] == strSecond):
-                                    pass
-                                else:
-                                    strFirst = strTmp[0]
-                                    strSecond = strTmp[1]
-                                if(i+1 < len(row)):
-                                    if(times[index+1]['row'] == row[i+1]):
-                                        if(len(times[index + 1]['time'].split('-')) > 1):
-                                            strSecond = times[index +
-                                                              1]['time'].split('-')[1]
-                                    else:
-                                        strTime = strTime + strFirst + "-" + strSecond + ",\n"
-                            else:
-                                if(times[index-1]['row'] == row[i-1]):
-                                    pass
-                                else:
-                                    strFirst = ''
-                                strSecond = strTmp[0]
-                strTime = strTime + strFirst + "-" + strSecond
-                print('strTime', strTime)
-
-                name_split = name.split('.')                    
-                send_msg_oneChat_title = """คุณ {} ได้จองห้องประชุม ในวันที่ {}\n""".format(name_split[1],dateThai)
-                print(send_msg_oneChat_title)
-
-                ## Select Room Name ##
-                sql_select_room = """ SELECT rname FROM `room` WHERE rid = %s """
-                cursor.execute(sql_select_room, (rid))
-                columns = [column[0] for column in cursor.description]
-                room = toJson(cursor.fetchall(), columns)
-                send_msg_oneChat = """\n{}ห้อง: {} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{} \n\nหากต้องการยกเลิกหรือแก้ไข\nคลิ้กที่นี่ https://intranet.inet.co.th/index.php/MainController/bookingroom/""".format(
-                    "", room[0]['rname'], description, numberofpeople, ps, strTime)
-                print(send_msg_oneChat)
-
-                payload = {
-                    "bot_id" : bot_id,
-                    "key_search" : oneid
-                }
-
-                ## GET user_id
-                response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
-                headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
-                if response['status'] != 'fail':
-                    user_id = response['friend']['user_id']                
-
-                ## Send One chat
-                payload_msg =  {
-                                "to" : user_id,
-                                "bot_id" : bot_id,
-                                "type" : "text",
-                                "message" : send_msg_oneChat_title + send_msg_oneChat
-                            }
-                send_type = 'one_id'
-                dateTime = datetime.datetime.now()
-                response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
-                headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
-
-
+                result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'room')
+                result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'room')
+                print('one_id',result_one_id)
+                print('email',result_email)
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
@@ -751,6 +877,11 @@ def post_available_vehicle(cursor):
                     # print(sql)
                     cursor.execute(sql)
 
+                result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'vehicle')
+                result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'vehicle')
+                print('one_id',result_one_id)
+                print('email',result_email)
+
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
@@ -787,8 +918,8 @@ def post_available_projector(cursor):
             if response:
                 raw = response.text
                 raw = json.loads(raw)
+                print(raw)
                 if raw['status'] == "fail":
-                    # print(raw['status'])
                     return jsonify({"message": raw}), 401
                 else:
                     sql_insert = []
@@ -812,6 +943,11 @@ def post_available_projector(cursor):
                 for sql in sql_insert:
                     # print(sql)
                     cursor.execute(sql)
+
+                result_one_id = send_to_oneid(row,date,name,pid,oneid,description,numberofpeople,ps,'projector')
+                result_email = send_to_email(row,date,name,pid,description,numberofpeople,ps,email,'projector')
+                print('one_id',result_one_id)
+                print('email',result_email)
 
                 return jsonify({"message": "Insert Success"})
             else:
