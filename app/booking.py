@@ -556,13 +556,14 @@ def timeMerge(cursor,row):
     cursor.execute(sql_all_time)
     columns = [column[0] for column in cursor.description]
     times = toJson(cursor.fetchall(), columns)
-
     ## Merge time ##
     strTime = ''
     strTmp = ''
     strFirst = ''
     strSecond = ''
     row.sort()
+    print('row',row)
+    print('times',times)
     for index, time in enumerate(times):
         for i, r in enumerate(row):
             if(time['row'] == r):
@@ -586,8 +587,8 @@ def timeMerge(cursor,row):
                         strFirst = ''
                     strSecond = strTmp[0]
     strTime = strTime + strFirst + "-" + strSecond
+    print('strTime',strTime)
     return strTime
-    # print('strTime', strTime)
 
 @connect_sql()
 def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,filter):
@@ -632,7 +633,7 @@ def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,f
             room = toJson(cursor.fetchall(), columns)
 
         send_msg_oneChat = """\n{}{} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{} \n\nหากต้องการยกเลิกหรือแก้ไข\nคลิ้กที่นี่ https://intranet.inet.co.th/index.php/MainController/bookingroom/""".format(messageTitle, room[0]['rname'], description, numberofpeople, ps, strTime)
-        print(send_msg_oneChat)
+
         payload = {
                 "bot_id": bot_id,
                 "key_search": oneid
@@ -679,7 +680,6 @@ def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,f
         cursor.execute(sql_select_room, (rid))
         columns = [column[0] for column in cursor.description]
         room = toJson(cursor.fetchall(), columns)
-
     headerTitle = ''
     messageTitle = ''
     if(filter == 'room'):
@@ -714,8 +714,8 @@ def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,f
     send_msg_email += "<br>"
 
     send_msg_email += "หากต้องการยกเลิกหรือแก้ไข\n <a href='https://intranet.inet.co.th/index.php/MainController/bookingroom/'>คลิ้กที่นี่</a>"
-    # server = "mailtx.inet.co.th"
-    server = "smtp.gmail.com"
+    server = "mailtx.inet.co.th"
+    # server = "smtp.gmail.com"
     send_from = 'noreply.booking@inet.co.th'
     send_to = email
     subject = 'แจ้งเตือนการจองห้องประชุมและรถตู้'
@@ -734,6 +734,7 @@ def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,f
     response = ''
     try:
         smtp = smtplib.SMTP(server)
+
         # smtp = smtplib.SMTP(server,587)
 
         ####
@@ -812,8 +813,8 @@ def post_available_room(cursor):
 
                 result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'room')
                 result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'room')
-                print('one_id',result_one_id)
-                print('email',result_email)
+                # print('one_id',result_one_id)
+                # print('email',result_email)
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
@@ -909,7 +910,11 @@ def post_available_projector(cursor):
             oneid = request.json.get('oneid', None)
             ps = request.json.get('ps', None)
             pid = request.json.get('pid', None)
+
+
             row = request.json.get('row', None)
+            newRow = list(map(int, row))
+            print('newRow',newRow)
             if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not pid or not row:
                 return jsonify({"message": "Missing parameter"}), 400
 
@@ -944,10 +949,9 @@ def post_available_projector(cursor):
                     # print(sql)
                     cursor.execute(sql)
 
-                result_one_id = send_to_oneid(row,date,name,pid,oneid,description,numberofpeople,ps,'projector')
-                result_email = send_to_email(row,date,name,pid,description,numberofpeople,ps,email,'projector')
-                print('one_id',result_one_id)
-                print('email',result_email)
+                result_one_id = send_to_oneid(newRow,date,name,pid,oneid,description,numberofpeople,ps,'projector')
+                result_email = send_to_email(newRow,date,name,pid,description,numberofpeople,ps,email,'projector')
+
 
                 return jsonify({"message": "Insert Success"})
             else:
