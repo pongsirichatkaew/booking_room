@@ -594,7 +594,8 @@ def timeMerge(cursor,row):
 def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,filter):
     try:
         dateThai = nextDayThai(date)
-        bot_id = "B9f17b544628e5dfa8be224d00e759065"
+        # bot_id = "B9f17b544628e5dfa8be224d00e759065"
+        bot_id = "Bbc41524dcbc3515ebc3cfd36a1b4ac81"
         tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
         send_type = ''
         send_to_email = ''
