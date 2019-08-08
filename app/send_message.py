@@ -208,7 +208,7 @@ def month(val):
 def nextDayThai(val):
     splitDay = val.split('-')
     yearThai = (int(splitDay[0]) + 543)
-    dateThai = "{}/{}/{}".format(splitDay[2], month(splitDay[1]), yearThai)
+    dateThai = "{} {} {}".format(splitDay[2], month(splitDay[1]), yearThai)
     return dateThai
 
 

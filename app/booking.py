@@ -4,7 +4,7 @@ import ast
 import datetime
 
 
-# -----------------------login---------------------------------#
+# -----------------------login------------------------โดนหลอกให้ทำ-------#
 @app.route('/api/v1/login', methods=['POST'])
 @connect_sql()
 def login(cursor):
@@ -84,7 +84,7 @@ def get_ticket_room(cursor):
         if not request.is_json:
             return jsonify({"message": "Missing JSON in request"}), 400
         else:
-            date = request.json.get('date', None)
+            date = request.json.get('date', None) #รับค่า date ฝดดยตรง ถ้าไม่มีมีค่าเป็น Null
             room_id = request.json.get('rid', None)
             if not date:
                 return jsonify({"message": "Missing parameter"}), 400
@@ -138,7 +138,7 @@ def get_available_ticket_room(cursor):
                 arr_room = []
                 # print(allroom)
                 for room in allroom:
-                    sql = """SELECT t.time,room.rname,t.row
+                    sql = """SELECT t.time,room.rname,t.row, room.rnumber
                             FROM ticketroom as r
                             LEFT JOIN time as t
                             ON r.row = t.row
@@ -153,7 +153,6 @@ def get_available_ticket_room(cursor):
                     cursor.execute(sql_select_room, (room["rid"],))
                     columns = [column[0] for column in cursor.description]
                     room_number = toJson(cursor.fetchall(), columns)
-                    # print(room_number)
 
                     jsonResult = {"name": room["rname"], "rid": room["rid"],
                                   "rnumber": room_number[0]['rnumber']}
@@ -177,11 +176,28 @@ def get_available_ticket_room(cursor):
                     my_time = set(arr_alltime) - set(arr_selecttime)
                     # print('listmytime', list(my_time))
                     list_time = []
+                    dateTimeNow = datetime.datetime.now()
+                    hours = dateTimeNow.strftime("%H")
+                    day = dateTimeNow.strftime("%Y-%m-%d")
+
+                                # print(date.strftime("%H"))
                     for t in list(my_time):
                         for time in alltime:
                             if(t == time['time']):
-                                list_time.append(
-                                    {"row": time['row'], "time": time['time']})
+                                timeSplit = time['time'].split(".")
+                                # print(timeSplit)
+                                if len(timeSplit) > 2:
+                                    timeSplit2 = timeSplit[0]
+                                else:
+                                    timeSpilt3 = timeSplit[0].split(' ')
+                                    timeSplit2 = timeSpilt3[1]
+                                
+                                if date > day:
+                                    list_time.append({"row": time['row'], "time": time['time']})
+                                else:
+                                    if int(timeSplit2) >= int(hours):
+                                        list_time.append({"row": time['row'], "time": time['time']})
+                                    break
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
@@ -316,11 +332,25 @@ def get_available_vehicle_room(cursor):
                     my_time = set(arr_alltime) - set(arr_selecttime)
 
                     list_time = []
+                    dateTimeNow = datetime.datetime.now()
+                    hours = dateTimeNow.strftime("%H")
+                    day = dateTimeNow.strftime("%Y-%m-%d")
                     for t in list(my_time):
                         for time in alltime:
                             if(t == time['time']):
-                                list_time.append(
-                                    {"row": time['row'], "time": time['time']})
+                                timeSplit = time['time'].split(".")
+                                # print(timeSplit)
+                                if len(timeSplit) > 2:
+                                    timeSplit2 = timeSplit[0]
+                                else:
+                                    timeSpilt3 = timeSplit[0].split(' ')
+                                    timeSplit2 = timeSpilt3[1]
+                                if date > day:
+                                    list_time.append({"row": time['row'], "time": time['time']})
+                                else:
+                                    if int(timeSplit2) >= int(hours):
+                                        list_time.append({"row": time['row'], "time": time['time']})
+                                    break 
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
@@ -442,31 +472,51 @@ def get_available_projector(cursor):
                     my_time = set(arr_alltime) - set(arr_selecttime)
 
                     list_time = []
-                    for mytime in my_time:
-                        if mytime == "08.01-09.00":
-                            list_time.append({"row": "1", "time": mytime})
-                        elif mytime == "09.01-10.00":
-                            list_time.append({"row": "2", "time": mytime})
-                        elif mytime == "10.01-11.00":
-                            list_time.append({"row": "3", "time": mytime})
-                        elif mytime == "11.01-12.00":
-                            list_time.append({"row": "4", "time": mytime})
-                        elif mytime == "12.01-13.00":
-                            list_time.append({"row": "5", "time": mytime})
-                        elif mytime == "13.01-14.00":
-                            list_time.append({"row": "6", "time": mytime})
-                        elif mytime == "14.01-15.00":
-                            list_time.append({"row": "7", "time": mytime})
-                        elif mytime == "15.01-16.00":
-                            list_time.append({"row": "8", "time": mytime})
-                        elif mytime == "16.01-17.00":
-                            list_time.append({"row": "9", "time": mytime})
-                        elif mytime == "17.01-18.00":
-                            list_time.append({"row": "10", "time": mytime})
-                        elif mytime == "18.01-19.00":
-                            list_time.append({"row": "11", "time": mytime})
-                        elif mytime == "> 19.01":
-                            list_time.append({"row": "12", "time": mytime})
+                    dateTimeNow = datetime.datetime.now()
+                    hours = dateTimeNow.strftime("%H")
+                    day = dateTimeNow.strftime("%Y-%m-%d")
+                    # for mytime in my_time:
+                    #     if mytime == "08.01-09.00":
+                    #         list_time.append({"row": "1", "time": mytime})
+                    #     elif mytime == "09.01-10.00":
+                    #         list_time.append({"row": "2", "time": mytime})
+                    #     elif mytime == "10.01-11.00":
+                    #         list_time.append({"row": "3", "time": mytime})
+                    #     elif mytime == "11.01-12.00":
+                    #         list_time.append({"row": "4", "time": mytime})
+                    #     elif mytime == "12.01-13.00":
+                    #         list_time.append({"row": "5", "time": mytime})
+                    #     elif mytime == "13.01-14.00":
+                    #         list_time.append({"row": "6", "time": mytime})
+                    #     elif mytime == "14.01-15.00":
+                    #         list_time.append({"row": "7", "time": mytime})
+                    #     elif mytime == "15.01-16.00":
+                    #         list_time.append({"row": "8", "time": mytime})
+                    #     elif mytime == "16.01-17.00":
+                    #         list_time.append({"row": "9", "time": mytime})
+                    #     elif mytime == "17.01-18.00":
+                    #         list_time.append({"row": "10", "time": mytime})
+                    #     elif mytime == "18.01-19.00":
+                    #         list_time.append({"row": "11", "time": mytime})
+                    #     elif mytime == "> 19.01":
+                    #         list_time.append({"row": "12", "time": mytime})
+                    for t in list(my_time):
+                        for time in alltime:
+                            if(t == time['time']):
+                                timeSplit = time['time'].split(".")
+                                        # print(timeSplit)
+                                if len(timeSplit) > 2:
+                                    timeSplit2 = timeSplit[0]
+                                else:
+                                    timeSpilt3 = timeSplit[0].split(' ')
+                                    timeSplit2 = timeSpilt3[1]
+                                        
+                                if date > day:
+                                    list_time.append({"row": time['row'], "time": time['time']})
+                                else:
+                                    if int(timeSplit2) >= int(hours):
+                                        list_time.append({"row": time['row'], "time": time['time']})
+                                    break
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
