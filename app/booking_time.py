@@ -110,7 +110,6 @@ def get_available_time_room(cursor):
 
                         my_room = set(arr_allroom) - set(arr_selectroom)
                         # print('my_room', my_room)
-11111111111111111111111111111111111111
                         list_item = []
                         for r in list(my_room):
                             for room in allroom:
