@@ -119,7 +119,8 @@ def discard_booking(cursor):
                 else:
                     times = []
                     times.append({room['row']:room['time']})
-                    roomResult.append({"rid":room['rid'],"rname":room['rname'],"date":room['date'],"times":times})
+                    format_date = room['date'].strftime("%Y-%m-%d") 
+                    roomResult.append({"rid":room['rid'],"rname":room['rname'],"date":format_date,"times":times})
                     tmp_room_id = room['rid']
             print('result',roomResult)
             return jsonify({"result": roomResult})
