@@ -92,11 +92,44 @@ def discard_booking(cursor):
         date = request.json.get('date', None)
         code = request.json.get('code', None)
         oneid = request.json.get('oneid', None)
+        print(date)
+        print(code)
+        print(oneid)
         if not code and not oneid:
             return jsonify({"message": "Missing JSON in request"}), 400
         else:
-            if not code or not oneid or not date:
+            if not code or not oneid :
                 return jsonify({"message": "Missing parameter"}), 400
+            elif not date:
+                sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, 
+                          time.time, ticketroom.oneid, ticketroom.code, ticketroom.name, 
+                          ticketroom.description, ticketroom.ps, ticketroom.date
+                          FROM ticketroom
+                          INNER JOIN time ON ticketroom.row = time.row
+                          INNER JOIN room ON ticketroom.rid = room.rid
+                          WHERE ticketroom.oneid = %s AND ticketroom.code = %s  AND room.category = 'room'
+                          ORDER BY ticketroom.date,ticketroom.rid"""
+                cursor.execute(sql, (oneid, code,))
+                columns = [column[0] for column in cursor.description]
+                result = toJson(cursor.fetchall(), columns)
+                roomResult = []
+                rooms = []
+                times = []
+                tmp_room_id = 0
+                tmp_date = None
+                for room in result:
+                    if room['rid'] == tmp_room_id and room['date'] == tmp_date:
+                        times.append({room['row']: room['time']})
+                    else:
+                        times = []
+                        times.append({room['row']: room['time']})
+                        format_date = room['date'].strftime("%Y-%m-%d")
+                        roomResult.append(
+                            {"rid": room['rid'], "rname": room['rname'], "date": format_date, "times": times})
+                        tmp_room_id = room['rid']
+                        tmp_date = room['date']
+                print('result', roomResult)
+                return jsonify({"result": roomResult})
             else:
                 sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, 
                           time.time, ticketroom.oneid, ticketroom.code, ticketroom.name, 
@@ -115,14 +148,15 @@ def discard_booking(cursor):
             tmp_room_id = 0
             for room in result:
                 if room['rid'] == tmp_room_id:
-                    times.append({room['row']:room['time']})
+                    times.append({room['row']: room['time']})
                 else:
                     times = []
-                    times.append({room['row']:room['time']})
-                    format_date = room['date'].strftime("%Y-%m-%d") 
-                    roomResult.append({"rid":room['rid'],"rname":room['rname'],"date":format_date,"times":times})
+                    times.append({room['row']: room['time']})
+                    format_date = room['date'].strftime("%Y-%m-%d")
+                    roomResult.append(
+                        {"rid": room['rid'], "rname": room['rname'], "date": format_date, "times": times})
                     tmp_room_id = room['rid']
-            print('result',roomResult)
+            print('result', roomResult)
             return jsonify({"result": roomResult})
     except Exception as e:
         print('error ===', e)
