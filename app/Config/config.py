@@ -2,7 +2,7 @@ from flask import Flask, request, Response, jsonify, current_app, abort, send_fr
 from flask_cors import CORS, cross_origin
 from flaskext.mysql import MySQL
 from functools import wraps
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import requests
 import base64
 import json
@@ -34,16 +34,16 @@ CORS(app)
 # app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 # ------------------------------------------------------
-app.config['MYSQL_DATABASE_USER'] = "root"
-app.config['MYSQL_DATABASE_PASSWORD'] = "l^9i@xib,kIlkily,ryoTN"
-app.config['MYSQL_DATABASE_DB'] = 'bookingroom_db'
-app.config['MYSQL_DATABASE_HOST'] = '203.150.57.159'
+# app.config['MYSQL_DATABASE_USER'] = "root"
+# app.config['MYSQL_DATABASE_PASSWORD'] = "l^9i@xib,kIlkily,ryoTN"
+# app.config['MYSQL_DATABASE_DB'] = 'bookingroom_db'
+# app.config['MYSQL_DATABASE_HOST'] = '203.150.57.159'
 
 # ------------------------------------------------------
-# app.config['MYSQL_DATABASE_USER'] = "root"
-# app.config['MYSQL_DATABASE_PASSWORD'] = ""
-# app.config['MYSQL_DATABASE_DB'] = 'meeting-room'
-# app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+app.config['MYSQL_DATABASE_USER'] = "root"
+app.config['MYSQL_DATABASE_PASSWORD'] = ""
+app.config['MYSQL_DATABASE_DB'] = 'meeting-room'
+app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 mysql = MySQL()
 mysql.init_app(app)
