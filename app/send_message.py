@@ -113,33 +113,37 @@ def format_json_for_send_message(cursor, nextDay, tabel, bot_id, tokenBot):
             mergedTime = []
 
             if len(times) > 1:
-                txtTime = times[0]['time']
-                txt = txtTime.split('-')
-                timeStart = txt[0]
-                timeEnd = ''
-                for index in range(len(times)):
-                    tmp = -1
-                    if (index + 1 != len(times)):
-                        if (times[index]['row'] - times[index + 1]['row']) == -1:
-                            txtTimeLast = times[index]['time']
-                            txtLast = txtTimeLast.split('-')
+                #8.00-9.00 9.00-10.00 12.00-13.00
+                # 1 , 2 , 4
+                txtTime = times[0]['time'] #first time 8.00-9.00
+                txt = txtTime.split('-') #txt[0] = 8.00 txt[1] = 9.00
+                timeStart = txt[0] #timeStart = 8.00
+                timeEnd = '' 
+                for index in range(len(times)): # 0,1,2
+                    if (index + 1 != len(times)): 
+                        if (times[index]['row'] - times[index + 1]['row']) == -1:  
+                            #1 1-2 = -1
+                            #2 2-4 = -2
+                            txtTimeLast = times[index]['time'] # 8.00 - 9.00
+
+                            txtLast = txtTimeLast.split('-') #  [0] = 8.00 [1] = 9.00
                             if len(txtLast) > 1:
-                                timeEnd = txtLast[1]
+                                timeEnd = txtLast[1] # txtEnd = 9.00
                             else:
                                 timeEnd = txtLast[0]
                         else:
-                            txtTimeLast = times[index]['time']
-                            txtLast = txtTimeLast.split('-')
+                            txtTimeLast = times[index]['time'] # 9.00 - 10.00
+                            txtLast = txtTimeLast.split('-') # [0] 9.00 [1] 10.00
                             if len(txtLast) > 1:
-                                timeEnd = txtLast[1]
+                                timeEnd = txtLast[1] # 10.00
                             else:
                                 timeEnd = txtLast[0]
-                            mergedTime.append(timeStart + '-' + timeEnd)
-                            txtTime = times[index + 1]['time']
-                            txt = txtTime.split('-')
-                            timeStart = txt[0]
+                            mergedTime.append(timeStart + '-' + timeEnd) # mergeTime [8.00 - 10.00]
+                            txtTime = times[index + 1]['time'] # txttime = 12.00 - 13.00
+                            txt = txtTime.split('-') # txxt = [0] = 12.00 , [1] = 13.00
+                            timeStart = txt[0] #timeStart = 12.00
                     else:
-                        if (times[index]['row'] - times[index - 1]['row']) == 1:
+                        if (times[index]['row'] - times[index - 1]['row']) == 1: # 4 - 2 = 2
                             txtTimeLast = times[index]['time']
                             txtLast = txtTimeLast.split('-')
                             if len(txtLast) > 1:
@@ -148,7 +152,7 @@ def format_json_for_send_message(cursor, nextDay, tabel, bot_id, tokenBot):
                                 timeEnd = txtLast[0]
                             mergedTime.append(timeStart + '-' + timeEnd)
                         else:
-                            mergedTime.append(times[index]['time'])
+                            mergedTime.append(times[index]['time']) # mergeTime [8.00 - 10.00,12.00-13.00]
 
                 time = timeStart + '-' + timeEnd
             else:

@@ -612,8 +612,11 @@ def timeMerge(cursor,row):
     strFirst = ''
     strSecond = ''
     row.sort()
-    print('row',row)
-    print('times',times)
+    # print('row',row)
+    # print('times',times)
+    # range(len(times)) 0,1,2,3,4  range(5)
+    # for(let i=0 ; i <5 ; i++)
+    # for i in range(5)
     for index, time in enumerate(times):
         for i, r in enumerate(row):
             if(time['row'] == r):
