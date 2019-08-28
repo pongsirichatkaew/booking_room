@@ -140,7 +140,7 @@ def discard_booking(cursor):
                                 {"rid": room['rid'], "rname": room['rname'], "name": room['name'], "email": room['email'], "date": format_date, "times": times})
                             tmp_room_id = room['rid']
                             tmp_date = room['date']
-                # print('result', roomResult)
+                print('result', roomResult)
                 return jsonify({"result": roomResult})
             else:
                 sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, 
@@ -398,7 +398,7 @@ def discard_room_email(cursor,row,date,name,rid,email):
     send_msg_email += """
     <li>{} {} </li>
     <li>{} </li>""".format(messageTitle, room[0]['rname'], timeSelec)
-    print(send_msg_email)
+    # print(send_msg_email)
 
     send_msg_email += "</ul>"
     send_msg_email += "<br>"
@@ -465,7 +465,7 @@ def discard_to_oneid(cursor,row,date,name,rid,oneid):
         cursor.execute(sql_select_room, (rid))
         columns = [column[0] for column in cursor.description]
         room = toJson(cursor.fetchall(), columns)
-        print(room)
+        # print(room)
 
         if(room[0]['category'] == 'room'):
             headerTitle = 'ห้องประชุม'
