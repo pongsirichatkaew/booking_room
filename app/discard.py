@@ -477,9 +477,10 @@ def discard_to_oneid(cursor,row,date,name,rid,oneid):
         strTime = timeMerge(row)
 
         name_split = name.split('.')
-        send_msg_oneChat_title = """คุณ {} ได้ยกเลิกการจอง{} ในวันที่ {}\n""".format(name_split[1], headerTitle, dateThai)
+        # send_msg_oneChat_title = """คุณ {} ได้ยกเลิกการจอง{} ในวันที่ {}\n""".format(name_split[1], headerTitle, dateThai)
 
-        send_msg_oneChat = """\n{}{} \n เวลา:\n{} """.format(messageTitle, room[0]['rname'], strTime)
+        # send_msg_oneChat = """\n{}{} \n เวลา:\n{} """.format(messageTitle, room[0]['rname'], strTime)
+        send_msg_oneChat = """การจอง{} {} \nวัน: {} \nเวลา:\n\t{} \nได้ถูกยกเลิกเรียบร้อยแล้ว """.format(headerTitle, room[0]['rname'], dateThai, strTime)
         # print(send_msg_oneChat)
 
         payload = {
@@ -498,7 +499,8 @@ def discard_to_oneid(cursor,row,date,name,rid,oneid):
                             "to" : user_id,
                             "bot_id" : bot_id,
                             "type" : "text",
-                            "message" : send_msg_oneChat_title + send_msg_oneChat
+                            "message" : send_msg_oneChat
+                            # "message" : send_msg_oneChat_title + send_msg_oneChat
                         }
         send_type = 'one_id'
         dateTime = datetime.datetime.now()
