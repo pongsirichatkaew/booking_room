@@ -140,7 +140,7 @@ def discard_booking(cursor):
                                 {"rid": room['rid'], "rname": room['rname'], "name": room['name'], "email": room['email'], "date": format_date, "times": times})
                             tmp_room_id = room['rid']
                             tmp_date = room['date']
-                print('result', roomResult)
+                # print('result', roomResult)
                 return jsonify({"result": roomResult})
             else:
                 sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, 
@@ -510,4 +510,96 @@ def discard_to_oneid(cursor,row,date,name,rid,oneid):
     except Exception as e:
         print('error ===', e)
         current_app.logger.info(e)
+        return jsonify(str(e))\
+
+
+@app.route('/api/v1/confirm', methods=['GET'])
+@connect_sql()
+def confirm(cursor):
+    try:
+        playloads = []
+        times = []
+        category = ''
+        headTitle = ''
+        tomorow = (datetime.date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+        sql = """ SELECT ticketroom.rid, room.rname, ticketroom.row, time.time, ticketroom.oneid, ticketroom.code, 
+                  ticketroom.name, ticketroom.email, ticketroom.date, room.category FROM ticketroom 
+                  JOIN time ON ticketroom.row = time.row 
+                  JOIN room ON ticketroom.rid = room.rid 
+                  WHERE date = '{}' ORDER BY ticketroom.name DESC """.format(tomorow)
+        cursor.execute(sql)
+        columns = [column[0] for column in cursor.description]
+        result_tomorow = toJson(cursor.fetchall(), columns)
+        times = []
+        tmp_room_id = 0
+        tmp_date = ''
+        person_result = []
+
+        if result_tomorow:
+            for room in result_tomorow:
+                if room['rid'] == tmp_room_id and room['date'] == tmp_date:
+                    times.append({"row": room['row'], "time":room['time']})
+                else:
+                    times = []
+                    times.append({"row": room['row'], "time":room['time']})
+                    format_date = room['date'].strftime("%d-%m-%Y")
+                    person_result.append(
+                        {"oneid": room['oneid'], "rid": room['rid'], "rname": room['rname'], "name": room['name'], "email": room['email'], "date": format_date, "times": times, "category": room['category']})
+                    tmp_room_id = room['rid']
+                    tmp_date = room['date']
+
+            botid = 'Bab49cebfb29557219b1eb3e75196a705'
+            authorization = 'Bearer Ae369d6e9d3af510b9ac0276ab5e5ac9150230f559c6a4362aa1cd9b558fadecbfe73644946b5460d86781f6fc1eacc73'
+            for msg in person_result:
+                if msg['category'] == 'room':
+                    category = 'ห้องประชุม'
+                    headTitle = 'ห้อง'
+                else:
+                    category = 'รถตู้'
+                    headTitle = 'รถตู้'
+                payload_msg = {
+                    "to" : msg['oneid'],
+                    "bot_id" : botid,
+                    "type" : "approve_message",
+                    "title" : "ยืนยันการใช้งาน{}".format(category),
+                    "short_detail" : "วันที่ {} \n{} {}".format(msg['date'], headTitle, msg['rname']),
+                    "detail" : "{} \n\nยืนยันการจอง{} {} \n\nวันที่ {}".format(msg['name'], headTitle, msg['rname'], msg['date']),
+                    "image" : "https://onechat.one.th/meeting.jpg",
+                    "choice" : [
+                                {
+                                    "label" : "ยืนยัน",
+                                    "type" : "approve",
+                                    "payload" : "approve"
+                                },
+                                {
+                                    "label" : "ยกเลิก",
+                                    "type" : "cancel",
+                                    "payload" : { "type": "cancel", "form no": "K123", "rid": msg['rid'], "date": msg['date'], "oneid": msg['oneid'] }
+                                }
+                    ]
+                }
+                res = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+                    headers={'Authorization': authorization}, json=payload_msg, timeout=(60 * 1)).json()
+            return jsonify(res)
+        else:
+            return jsonify({"message": "Data not found"})
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
         return jsonify(str(e))
+
+@app.route('/webhook', methods=['POST'])
+@connect_sql()
+def webhook(cursor):
+    # sys.stdout.flush()
+    if request.method == 'POST':
+        res = request.json.get('message')
+        confirmdata = res['data']
+        dateRemove = (datetime.date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+        if confirmdata != 'approve':
+            sql = """ DELETE FROM ticketroom WHERE oneid = %s AND date = %s AND rid = %s """
+            cursor.execute(sql, (confirmdata['oneid'], dateRemove, confirmdata['rid']))
+        return jsonify({"message": "success"}), 200
+    else:
+        return abort(400)
+
