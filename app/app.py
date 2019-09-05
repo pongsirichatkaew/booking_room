@@ -3,6 +3,7 @@ from booking import *
 from booking_time import *
 from send_message import *
 from discard import *
+from confirm import *
 
 
 @app.route('/connect_backend', methods=['GET'])

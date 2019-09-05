@@ -102,9 +102,6 @@ def discard_booking(cursor):
         date = request.json.get('date', None)
         code = request.json.get('code', None)
         oneid = request.json.get('oneid', None)
-        # print(date)
-        # print(code)
-        # print(oneid)
         if not code and not oneid:
             return jsonify({"message": "Missing JSON in request"}), 400
         else:
@@ -547,7 +544,7 @@ def confirm(cursor):
                         {"oneid": room['oneid'], "rid": room['rid'], "rname": room['rname'], "name": room['name'], "email": room['email'], "date": format_date, "times": times, "category": room['category']})
                     tmp_room_id = room['rid']
                     tmp_date = room['date']
-
+            # bot_id = "Bbc41524dcbc3515ebc3cfd36a1b4ac81" GA Bot
             botid = 'Bab49cebfb29557219b1eb3e75196a705'
             authorization = 'Bearer Ae369d6e9d3af510b9ac0276ab5e5ac9150230f559c6a4362aa1cd9b558fadecbfe73644946b5460d86781f6fc1eacc73'
             for msg in person_result:
