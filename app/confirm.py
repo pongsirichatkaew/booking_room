@@ -50,7 +50,7 @@ def confirmWebView(cursor):
                                     {
                                         "label": "คลิก!",
                                         "type": "webview",
-                                        "url": "https://one.th/register",
+                                        "url": "https://one.th/register", ### Link url/<code><oneid>
                                         "size": "full"
                                     }
                                 ]
@@ -81,7 +81,7 @@ def getroombooking(cursor):
                           FROM ticketroom
                           INNER JOIN time ON ticketroom.row = time.row
                           INNER JOIN room ON ticketroom.rid = room.rid
-                          WHERE ticketroom.oneid = %s AND ticketroom.code = %s  AND room.category = 'room' AND date(date) = %s 
+                          WHERE ticketroom.oneid = %s AND ticketroom.code = %s  AND date(date) = %s 
                           ORDER BY ticketroom.rid"""
             cursor.execute(sql, (oneid, code, date,))
             columns = [column[0] for column in cursor.description]
@@ -119,21 +119,169 @@ def confirmbooking(cursor):
             return jsonify({"status": "fail", "message": "Missing Json"})
         else:
             timeStamp = datetime.datetime.now().strftime("%X")
+            date_time = data[0]['date']
+            # code = data[0]['code']
+            rid = data[0]['rid']
+            oneid = data[0]['oneid']
+            name = data[0]['name']
+            email = data[0]['email']
+            status = data[0]['status']
+            print('status', status)
+            row = []
             for x in data:
                 if x['status'] != 'ยกเลิก':
+                    row.append(x['row'])
                     sql_update_stauts = """ UPDATE ticketroom SET status = %s WHERE rid = %s AND row = %s AND date = %s AND oneid = %s """
                     cursor.execute(sql_update_stauts, ("ยืนยัน", x['rid'], x['row'], x['date'], x['oneid']))
                     sql = """ INSERT INTO log_appoved (rid, row, time_stamp, date, oneid, name, status) VALUES (%s, %s, %s, %s, %s, %s, %s) """
                     cursor.execute(
                         sql, (x['rid'], x['row'], timeStamp, x['date'], x['oneid'], x['name'], x['status']))
                 else:
+                    row.append(x['row'])
                     sql_del = """ DELETE FROM ticketroom WHERE rid = %s AND row = %s AND date = %s AND oneid = %s """
                     cursor.execute(
                         sql_del, (x['rid'], x['row'], x['date'], x['oneid']))
                     sql_discard = """ INSERT INTO log_appoved (rid, row, time_stamp, date, oneid, name, status) VALUES (%s, %s, %s, %s, %s, %s, %s) """
                     cursor.execute(
                         sql_discard, (x['rid'], x['row'], timeStamp, x['date'], x['oneid'], x['name'], x['status']))
+            confirm_room_email(row, date_time, name, rid, email, status)
+            confirm_to_oneid(row,date_time,name,rid,oneid,status)
             return jsonify({"message": "success"})
     except Exception as e:
         print(str(e))
+        return jsonify(str(e))
+
+@app.route('/checkbot')
+def cdheckbot():
+    botid = 'Bab49cebfb29557219b1eb3e75196a705'
+    authorization = 'Bearer Ae369d6e9d3af510b9ac0276ab5e5ac9150230f559c6a4362aa1cd9b558fadecbfe73644946b5460d86781f6fc1eacc73'
+    respone = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/getlistroom",
+                                               headers={'Authorization': authorization}, json={"bot_id": botid}, timeout=(60 * 1)).json()
+    return jsonify({"result": respone})
+
+@connect_sql()
+def confirm_room_email(cursor,row,date,name,rid,email,status):
+    dateThai = nextDayThai(date)
+    name_split = name.split('.')
+    strTime = timeMerge(row)
+
+    room = None
+    ## Select Room Name ##
+    sql_select_room = """ SELECT rname, category FROM room WHERE rid = %s """
+    cursor.execute(sql_select_room, (rid))
+    columns = [column[0] for column in cursor.description]
+    room = toJson(cursor.fetchall(), columns)
+    headerTitle = ''
+    messageTitle = ''
+    if(room[0]['category'] == 'room'):
+        headerTitle = 'ห้องประชุม'
+        messageTitle = 'ห้อง:'
+    else:
+        headerTitle = 'รถตู้'
+        messageTitle = ''
+
+    send_msg_title = "วันที่ " + dateThai + " คุณ " + \
+    name_split[1] + " ได้" + status + "การจอง" + \
+    headerTitle + " ดังนี้ <br><br>"
+    send_msg_email = ''
+    timeSelec = 'เวลา: <br>' 
+    timeSelec += strTime
+    send_msg_email += """ <ul style="list-style-type:none; padding: 0; margin: 0;"> """
+    send_msg_email += """
+    <li>{} {} </li>
+    <li>{} </li>""".format(messageTitle, room[0]['rname'], timeSelec)
+    send_msg_email += "</ul>"
+    send_msg_email += "<br>"
+    server = "mailtx.inet.co.th"
+    # server = "smtp.gmail.com"
+    send_from = 'noreply.booking@inet.co.th'
+    send_to = email
+    subject = 'แจ้งเตือน{}การใช้ห้องประชุมและรถตู้'.format(status)
+
+    text = send_msg_title + send_msg_email
+
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = send_to
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(text, "html", "utf-8"))
+    send_type = 'email'
+    dateTime = datetime.datetime.now()
+    response = ''
+    try:
+        smtp = smtplib.SMTP(server)
+        smtp.sendmail(send_from, send_to, msg.as_string())
+        smtp.close()
+        response = 'success'
+    except Exception as e:
+        print(str(e))
+        current_app.logger.info(e)
+        response = 'error'
+        return str(e)
+    return response
+
+@connect_sql()
+def confirm_to_oneid(cursor,row,date,name,rid,oneid,status):
+    try:
+        dateThai = nextDayThai(date)
+        # bot_id = "B9f17b544628e5dfa8be224d00e759065"
+        bot_id = "Bbc41524dcbc3515ebc3cfd36a1b4ac81"
+        tokenBot = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
+        send_type = ''
+        send_to_email = ''
+        send_to_oneid = ''
+        user_id = ''
+        
+        headerTitle = ''
+        messageTitle = ''
+
+        room = None
+        ## Select Room Name #
+        sql_select_room = """ SELECT rname, category FROM `room` WHERE rid = %s """
+        cursor.execute(sql_select_room, (rid))
+        columns = [column[0] for column in cursor.description]
+        room = toJson(cursor.fetchall(), columns)
+
+        if(room[0]['category'] == 'room'):
+            headerTitle = 'ห้องประชุม'
+            messageTitle = 'ห้อง:'
+        else:
+            headerTitle = 'รถตู้'
+            messageTitle = ''
+        
+        strTime = timeMerge(row)
+
+        name_split = name.split('.')
+        # send_msg_oneChat_title = """คุณ {} ได้ยกเลิกการจอง{} ในวันที่ {}\n""".format(name_split[1], headerTitle, dateThai)
+
+        # send_msg_oneChat = """\n{}{} \n เวลา:\n{} """.format(messageTitle, room[0]['rname'], strTime)
+        send_msg_oneChat = """การจอง{} {} \nวัน: {} \nเวลา:\n{} \nได้ถูก{}เรียบร้อยแล้ว """.format(headerTitle, room[0]['rname'], dateThai, strTime, status)
+        payload = {
+                "bot_id": bot_id,
+                "key_search": oneid
+            }
+
+        # GET user_id
+        response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
+                                                    headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
+        if response['status'] != 'fail':
+            user_id = response['friend']['user_id']
+
+        # Send One chat
+        payload_msg =  {
+                            "to" : user_id,
+                            "bot_id" : bot_id,
+                            "type" : "text",
+                            "message" : send_msg_oneChat
+                            # "message" : send_msg_oneChat_title + send_msg_oneChat
+                        }
+        send_type = 'one_id'
+        dateTime = datetime.datetime.now()
+        response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+        headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
+        return response_msg
+    except Exception as e:
+        print('error ===', e)
+        current_app.logger.info(e)
         return jsonify(str(e))

@@ -404,7 +404,7 @@ def discard_room_email(cursor,row,date,name,rid,email):
     # server = "smtp.gmail.com"
     send_from = 'noreply.booking@inet.co.th'
     send_to = email
-    subject = 'แจ้งเตือนการจองยกเลิกห้องประชุมและรถตู้'
+    subject = 'แจ้งเตือนยกเลิกการจองห้องประชุมและรถตู้'
 
     text = send_msg_title + send_msg_email
 
@@ -477,7 +477,7 @@ def discard_to_oneid(cursor,row,date,name,rid,oneid):
         # send_msg_oneChat_title = """คุณ {} ได้ยกเลิกการจอง{} ในวันที่ {}\n""".format(name_split[1], headerTitle, dateThai)
 
         # send_msg_oneChat = """\n{}{} \n เวลา:\n{} """.format(messageTitle, room[0]['rname'], strTime)
-        send_msg_oneChat = """การจอง{} {} \nวัน: {} \nเวลา:\n\t{} \nได้ถูกยกเลิกเรียบร้อยแล้ว """.format(headerTitle, room[0]['rname'], dateThai, strTime)
+        send_msg_oneChat = """การจอง{} {} \nวัน: {} \nเวลา:\n{} \nได้ถูกยกเลิกเรียบร้อยแล้ว """.format(headerTitle, room[0]['rname'], dateThai, strTime)
         # print(send_msg_oneChat)
 
         payload = {
