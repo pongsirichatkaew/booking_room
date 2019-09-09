@@ -596,6 +596,7 @@ def webhook(cursor):
         if confirmdata != 'approve':
             sql = """ DELETE FROM ticketroom WHERE oneid = %s AND date = %s AND rid = %s """
             cursor.execute(sql, (confirmdata['oneid'], dateRemove, confirmdata['rid']))
+        # print(res)
         return jsonify({"message": "success"}), 200
     else:
         return abort(400)

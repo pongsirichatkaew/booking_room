@@ -27,8 +27,11 @@ def confirmWebView(cursor):
         result_tomorow = toJson(cursor.fetchall(), columns)
         if result_tomorow:
             for res in result_tomorow:
-                botid = 'Bab49cebfb29557219b1eb3e75196a705'
-                authorization = 'Bearer Ae369d6e9d3af510b9ac0276ab5e5ac9150230f559c6a4362aa1cd9b558fadecbfe73644946b5460d86781f6fc1eacc73'
+                # botid = 'Bab49cebfb29557219b1eb3e75196a705' # test bot
+                url = "https://chat-booking.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
+                botid = 'Bbc41524dcbc3515ebc3cfd36a1b4ac81'
+                authorization = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
+                # authorization = 'Bearer Ae369d6e9d3af510b9ac0276ab5e5ac9150230f559c6a4362aa1cd9b558fadecbfe73644946b5460d86781f6fc1eacc73'
                 #####################FRIEND CHECK########################################
                 playload_friend = {
                     "bot_id": botid,
@@ -50,7 +53,7 @@ def confirmWebView(cursor):
                                     {
                                         "label": "คลิก!",
                                         "type": "webview",
-                                        "url": "https://one.th/register", ### Link url/<code><oneid>
+                                        "url": url, ### Link url/<code>/<oneid>
                                         "size": "full"
                                     }
                                 ]
