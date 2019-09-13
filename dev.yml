@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+    meeting_room_backend_dev:
+        image: meeting_room_backend_dev
+        ports:
+            - "7771:7771"
+        volumes:
+            - ./:/code
+        restart: always
+        networks:
+            - backend-network-3-dev
+networks:
+    backend-network-3-dev:
+        driver: bridge

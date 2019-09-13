@@ -41,9 +41,9 @@ echo "
 server {
   # listen 7777;
   # listen [::]:7777;
-  listen 7777 ssl;
-  listen [::]:7777 ssl;
-  
+  listen 7771 ssl;
+  listen [::]:7771 ssl;
+
   server_name hr-management.inet.co.th;
   ssl_certificate /app/ssl/inet.crt;
   ssl_certificate_key /app/ssl/inet.key;
