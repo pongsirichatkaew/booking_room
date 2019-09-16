@@ -46,7 +46,7 @@ def confirmWebView(cursor):
                             {
                                 "image": "https://c1.sfdcstatic.com/content/dam/blogs/ca/Blog%20Posts/shake-up-sales-meeting-og.jpg",
                                 "title": "ยืนยันการใช้งานห้องประชุมและรถตู้",
-                                "detail": "กรุณาคลิกที่ลิ้งเพื้อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date']),
+                                "detail": "กรุณาคลิกที่ลิงค์เพื่อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date']),
                                 "choice": [
                                     {
                                         "label": "คลิก!",
@@ -129,7 +129,6 @@ def confirmbooking(cursor):
             name = data[0]['name']
             email = data[0]['email']
             status = data[0]['status']
-            print('status', status)
             row = []
             for x in data:
                 if x['status'] != 'ยกเลิก':
