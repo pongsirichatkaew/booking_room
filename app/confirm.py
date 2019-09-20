@@ -27,8 +27,8 @@ def confirmWebView(cursor):
         result_tomorow = toJson(cursor.fetchall(), columns)
         if result_tomorow:
             for res in result_tomorow:
-                # url = "https://chat-booking.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
-                url = "https://chat-booking-test.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
+                url = "https://chat-booking.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
+                # url = "https://chat-booking-test.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
                 botid = 'Bbc41524dcbc3515ebc3cfd36a1b4ac81'
                 authorization = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
                                 #####################FRIEND CHECK########################################
