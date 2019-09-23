@@ -686,7 +686,7 @@ def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,f
             columns = [column[0] for column in cursor.description]
             room = toJson(cursor.fetchall(), columns)
 
-        send_msg_oneChat = """\n{}{} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{} \n\nหากต้องการยกเลิกหรือแก้ไข\nคลิ้กที่นี่ https://intranet.inet.co.th/index.php/MainController/bookingroom/""".format(messageTitle, room[0]['rname'], description, numberofpeople, ps, strTime)
+        send_msg_oneChat = """\n{}{} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{}""".format(messageTitle, room[0]['rname'], description, numberofpeople, ps, strTime)
 
         payload = {
                 "bot_id": bot_id,
