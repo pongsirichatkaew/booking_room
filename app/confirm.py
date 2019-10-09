@@ -21,49 +21,52 @@ def confirmWebView(cursor):
                   ticketroom.name, ticketroom.email, ticketroom.date FROM ticketroom
                   JOIN time ON ticketroom.row = time.row
                   JOIN room ON ticketroom.rid = room.rid
-                  WHERE date = '{}' GROUP BY ticketroom.name ORDER BY ticketroom.name DESC """.format(dateTomorow)
+                  WHERE date = '{}' AND ticketroom.code = "OC2261074" GROUP BY ticketroom.name ORDER BY ticketroom.name DESC """.format(dateTomorow)
+        # sql = """ SELECT * FROM ticketroom
+        #           WHERE date = '{}' AND code = "OC2261074" """.format(dateTomorow)
         cursor.execute(sql)
         columns = [column[0] for column in cursor.description]
         result_tomorow = toJson(cursor.fetchall(), columns)
-        if result_tomorow:
-            for res in result_tomorow:
-                url = "https://chat-booking.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
-                # url = "https://chat-booking-test.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
-                botid = 'Bbc41524dcbc3515ebc3cfd36a1b4ac81'
-                authorization = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
-                                #####################FRIEND CHECK########################################
-                playload_friend = {
-                    "bot_id": botid,
-                    "key_search": res['oneid']
-                }
-                friend_check = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
-                                                headers={'Authorization': authorization}, json=playload_friend, timeout=(60 * 1)).json()
-                if friend_check['status'] != 'fail':
-                    playload_msg = {
-                        "to": res['oneid'],
-                        "bot_id": botid,
-                        "type": "template",
-                        "elements": [
-                            {
-                                "image": "https://c1.sfdcstatic.com/content/dam/blogs/ca/Blog%20Posts/shake-up-sales-meeting-og.jpg",
-                                "title": "ยืนยันการใช้งานห้องประชุมและรถตู้",
-                                "detail": "กรุณาคลิกที่ลิงค์เพื่อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date']),
-                                "choice": [
-                                    {
-                                        "label": "คลิก!",
-                                        "type": "webview",
-                                        "url": url,
-                                        "size": "full"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                    respone = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
-                                               headers={'Authorization': authorization}, json=playload_msg, timeout=(60 * 1)).json()
-        else:
-            return jsonify({"message": "Not found"})
-        return jsonify({"result": respone})
+        return jsonify(result_tomorow)
+        # if result_tomorow:
+        #     for res in result_tomorow:
+        #         url = "https://chat-booking.inet.co.th/confirm/{}/{}/{}".format(res['code'], res['oneid'], res['date'])
+        #         # url = "https://chat-booking-test.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
+        #         botid = 'Bbc41524dcbc3515ebc3cfd36a1b4ac81'
+        #         authorization = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
+        #                         #####################FRIEND CHECK########################################
+        #         playload_friend = {
+        #             "bot_id": botid,
+        #             "key_search": res['oneid']
+        #         }
+        #         friend_check = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
+        #                                         headers={'Authorization': authorization}, json=playload_friend, timeout=(60 * 1)).json()
+        #         if friend_check['status'] != 'fail':
+        #             playload_msg = {
+        #                 "to": res['oneid'],
+        #                 "bot_id": botid,
+        #                 "type": "template",
+        #                 "elements": [
+        #                     {
+        #                         "image": "https://c1.sfdcstatic.com/content/dam/blogs/ca/Blog%20Posts/shake-up-sales-meeting-og.jpg",
+        #                         "title": "ยืนยันการใช้งานห้องประชุมและรถตู้",
+        #                         "detail": "กรุณาคลิกที่ลิงค์เพื่อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date']),
+        #                         "choice": [
+        #                             {
+        #                                 "label": "คลิก!",
+        #                                 "type": "webview",
+        #                                 "url": url,
+        #                                 "size": "full"
+        #                             }
+        #                         ]
+        #                     }
+        #                 ]
+        #             }
+        #             respone = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+        #                                        headers={'Authorization': authorization}, json=playload_msg, timeout=(60 * 1)).json()
+        # else:
+        #     return jsonify({"message": "Not found"})
+        # return jsonify({"result": respone})
     except Exception as e:
         return jsonify({"status": "fail", "message": str(e)})
 
@@ -72,43 +75,48 @@ def confirmWebView(cursor):
 @connect_sql()
 def getroombooking(cursor):
     try:
+        date = request.json.get('date', None)
         oneid = request.json.get('oneid', None)
         code = request.json.get('code', None)
-        date = (datetime.date.today() +
-                timedelta(days=1)).strftime("%Y-%m-%d")
-        if not oneid or not code:
-            return jsonify({"status": "fail", "message": "Missing Parameter"})
+        date_now = datetime.date.today().strftime("%Y-%m-%d")
+        # date = (datetime.date.today() +
+        #         timedelta(days=1)).strftime("%Y-%m-%d")
+        if not oneid or not code or not date:
+            return jsonify({"status": "fail", "message": "Missing Parameter"}), 400
         else:
-            sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, ticketroom.description,
-                          time.time, ticketroom.oneid, ticketroom.code, ticketroom.name, ticketroom.status,
-                          ticketroom.description, ticketroom.ps, ticketroom.date, ticketroom.name, ticketroom.email
-                          FROM ticketroom
-                          INNER JOIN time ON ticketroom.row = time.row
-                          INNER JOIN room ON ticketroom.rid = room.rid
-                          WHERE ticketroom.oneid = %s AND ticketroom.code = %s  AND date(date) = %s
-                          ORDER BY ticketroom.rid"""
-            cursor.execute(sql, (oneid, code, date,))
-            columns = [column[0] for column in cursor.description]
-            result = toJson(cursor.fetchall(), columns)
-            roomResult = []
-            rooms = []
-            times = []
-            tmp_room_id = 0
-            dateNow = datetime.date.today()
-            for room in result:
-                if room['rid'] == tmp_room_id and room['date'] >= dateNow and room['status'] != "ยืนยัน":
-                    times.append({"row": room['row'], "time": room['time']})
-                else:
-                    if room['date'] >= dateNow and room['status'] != "ยืนยัน":
-                        times = []
-                        times.append(
-                            {"row": room['row'], "time": room['time']})
-                        format_date = room['date'].strftime("%Y-%m-%d")
-                        roomResult.append(
-                            {"rid": room['rid'], "oneid": room['oneid'], "rname": room['rname'], "description": room['description'], "name": room['name'], "email": room['email'], "date": format_date, "times": times})
-                        tmp_room_id = room['rid']
-            # print('result', roomResult)
-            return jsonify({"result": roomResult})
+            if date <= date_now:
+                return jsonify({"status": "fail", "message": {"text":"Date: {} time out.".format(date), "date": date}}), 200
+            else:
+                sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, ticketroom.description,
+                            time.time, ticketroom.oneid, ticketroom.code, ticketroom.name, ticketroom.status,
+                            ticketroom.description, ticketroom.ps, ticketroom.date, ticketroom.name, ticketroom.email
+                            FROM ticketroom
+                            INNER JOIN time ON ticketroom.row = time.row
+                            INNER JOIN room ON ticketroom.rid = room.rid
+                            WHERE ticketroom.oneid = %s AND ticketroom.code = %s  AND date(date) = %s
+                            ORDER BY ticketroom.rid"""
+                cursor.execute(sql, (oneid, code, date,))
+                columns = [column[0] for column in cursor.description]
+                result = toJson(cursor.fetchall(), columns)
+                roomResult = []
+                rooms = []
+                times = []
+                tmp_room_id = 0
+                dateNow = datetime.date.today()
+                for room in result:
+                    if room['rid'] == tmp_room_id and room['date'] >= dateNow and room['status'] != "ยืนยัน":
+                        times.append({"row": room['row'], "time": room['time']})
+                    else:
+                        if room['date'] >= dateNow and room['status'] != "ยืนยัน":
+                            times = []
+                            times.append(
+                                {"row": room['row'], "time": room['time']})
+                            format_date = room['date'].strftime("%Y-%m-%d")
+                            roomResult.append(
+                                {"rid": room['rid'], "oneid": room['oneid'], "rname": room['rname'], "description": room['description'], "name": room['name'], "email": room['email'], "date": format_date, "times": times})
+                            tmp_room_id = room['rid']
+                # print('result', roomResult)
+                return jsonify({"status": "success", "result": roomResult}), 200
     except Exception as e:
         current_app.logger.info(e)
         return jsonify(str(e)), 500
