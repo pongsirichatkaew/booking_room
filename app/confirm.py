@@ -28,45 +28,45 @@ def confirmWebView(cursor):
         columns = [column[0] for column in cursor.description]
         result_tomorow = toJson(cursor.fetchall(), columns)
         return jsonify(result_tomorow)
-        # if result_tomorow:
-        #     for res in result_tomorow:
-        #         url = "https://chat-booking.inet.co.th/confirm/{}/{}/{}".format(res['code'], res['oneid'], res['date'])
-        #         # url = "https://chat-booking-test.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
-        #         botid = 'Bbc41524dcbc3515ebc3cfd36a1b4ac81'
-        #         authorization = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
-        #                         #####################FRIEND CHECK########################################
-        #         playload_friend = {
-        #             "bot_id": botid,
-        #             "key_search": res['oneid']
-        #         }
-        #         friend_check = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
-        #                                         headers={'Authorization': authorization}, json=playload_friend, timeout=(60 * 1)).json()
-        #         if friend_check['status'] != 'fail':
-        #             playload_msg = {
-        #                 "to": res['oneid'],
-        #                 "bot_id": botid,
-        #                 "type": "template",
-        #                 "elements": [
-        #                     {
-        #                         "image": "https://c1.sfdcstatic.com/content/dam/blogs/ca/Blog%20Posts/shake-up-sales-meeting-og.jpg",
-        #                         "title": "ยืนยันการใช้งานห้องประชุมและรถตู้",
-        #                         "detail": "กรุณาคลิกที่ลิงค์เพื่อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date']),
-        #                         "choice": [
-        #                             {
-        #                                 "label": "คลิก!",
-        #                                 "type": "webview",
-        #                                 "url": url,
-        #                                 "size": "full"
-        #                             }
-        #                         ]
-        #                     }
-        #                 ]
-        #             }
-        #             respone = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
-        #                                        headers={'Authorization': authorization}, json=playload_msg, timeout=(60 * 1)).json()
-        # else:
-        #     return jsonify({"message": "Not found"})
-        # return jsonify({"result": respone})
+        if result_tomorow:
+            for res in result_tomorow:
+                url = "https://chat-booking.inet.co.th/confirm/{}/{}/{}".format(res['code'], res['oneid'], res['date'])
+                # url = "https://chat-booking-test.inet.co.th/confirm/{}/{}".format(res['code'], res['oneid'])
+                botid = 'Bbc41524dcbc3515ebc3cfd36a1b4ac81'
+                authorization = 'Bearer A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03'
+                                #####################FRIEND CHECK########################################
+                playload_friend = {
+                    "bot_id": botid,
+                    "key_search": res['oneid']
+                }
+                friend_check = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
+                                                headers={'Authorization': authorization}, json=playload_friend, timeout=(60 * 1)).json()
+                if friend_check['status'] != 'fail':
+                    playload_msg = {
+                        "to": res['oneid'],
+                        "bot_id": botid,
+                        "type": "template",
+                        "elements": [
+                            {
+                                "image": "https://c1.sfdcstatic.com/content/dam/blogs/ca/Blog%20Posts/shake-up-sales-meeting-og.jpg",
+                                "title": "ยืนยันการใช้งานห้องประชุมและรถตู้",
+                                "detail": "กรุณาคลิกที่ลิงค์เพื่อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date']),
+                                "choice": [
+                                    {
+                                        "label": "คลิก!",
+                                        "type": "webview",
+                                        "url": url,
+                                        "size": "full"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                    respone = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+                                               headers={'Authorization': authorization}, json=playload_msg, timeout=(60 * 1)).json()
+        else:
+            return jsonify({"message": "Not found"})
+        return jsonify({"result": respone})
     except Exception as e:
         return jsonify({"status": "fail", "message": str(e)})
 
