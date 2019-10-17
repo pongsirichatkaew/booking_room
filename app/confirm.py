@@ -21,7 +21,7 @@ def confirmWebView(cursor):
                   ticketroom.name, ticketroom.email, ticketroom.date FROM ticketroom
                   JOIN time ON ticketroom.row = time.row
                   JOIN room ON ticketroom.rid = room.rid
-                  WHERE date = '{}' AND ticketroom.code = "OC2261074" GROUP BY ticketroom.name ORDER BY ticketroom.name DESC """.format(dateTomorow)
+                  WHERE date = '{}' GROUP BY ticketroom.name ORDER BY ticketroom.name DESC """.format(dateTomorow)
         # sql = """ SELECT * FROM ticketroom
         #           WHERE date = '{}' AND code = "OC2261074" """.format(dateTomorow)
         cursor.execute(sql)
