@@ -86,7 +86,7 @@ def getroombooking(cursor):
             return jsonify({"status": "fail", "message": "Missing Parameter"}), 400
         else:
             if date <= date_now:
-                return jsonify({"status": "fail", "message": {"text":"Date: {} time out.".format(date), "date": date}}), 200
+                return jsonify({"status": "fail", "message": {"text":"Date: {} time out.".format(date), "date": date}, "result": []}), 200
             else:
                 sql = """SELECT ticketroom.rid, room.rname, ticketroom.row, ticketroom.description,
                             time.time, ticketroom.oneid, ticketroom.code, ticketroom.name, ticketroom.status,
