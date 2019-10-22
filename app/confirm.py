@@ -1,6 +1,7 @@
 from Config.config import *
 from send_message import *
 from booking import *
+from chatme_api import *
 import ast
 import datetime
 
@@ -140,8 +141,23 @@ def confirmbooking(cursor):
             email = data[0]['email']
             status = data[0]['status']
             row = []
+
+            room_name_sql = "SELECT rid, rname, category FROM room WHERE rid = {}".format(rid)
+            cursor.execute(room_name_sql)
+            columns = [column[0] for column in cursor.description]
+            room_name = toJson(cursor.fetchall(), columns)
+            category = room_name[0]['category']
+            webview = ''
+            status_type = ''
+
+            if category == "room":
+                webview = 'booking'
+            else:
+                webview = 'vehicle'
+
             for x in data:
                 if x['status'] != 'ยกเลิก':
+                    status_type = 'confirm'
                     row.append(x['row'])
                     sql_update_stauts = """ UPDATE ticketroom SET status = %s WHERE rid = %s AND row = %s AND date = %s AND oneid = %s """
                     cursor.execute(sql_update_stauts, ("ยืนยัน", x['rid'], x['row'], x['date'], x['oneid']))
@@ -149,6 +165,7 @@ def confirmbooking(cursor):
                     cursor.execute(
                         sql, (x['rid'], x['row'], timeStamp, x['date'], x['oneid'], x['name'], x['status']))
                 else:
+                    status_type = 'cancel'
                     row.append(x['row'])
                     sql_del = """ DELETE FROM ticketroom WHERE rid = %s AND row = %s AND date = %s AND oneid = %s """
                     cursor.execute(
@@ -158,6 +175,7 @@ def confirmbooking(cursor):
                         sql_discard, (x['rid'], x['row'], timeStamp, x['date'], x['oneid'], x['name'], x['status']))
             confirm_room_email(row, date_time, name, rid, email, status)
             confirm_to_oneid(row,date_time,name,rid,oneid,status)
+            send_json_chatme(oneid, row, date_time, rid, webview, status_type)
             return jsonify({"message": "success"})
     except Exception as e:
         print(str(e))

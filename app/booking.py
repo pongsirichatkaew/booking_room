@@ -1,5 +1,6 @@
 from Config.config import *
 from send_message import *
+from chatme_api import *
 import ast
 import datetime
 
@@ -640,7 +641,7 @@ def timeMerge(cursor,row):
                         strFirst = ''
                     strSecond = strTmp[0]
     strTime = strTime + strFirst + "-" + strSecond
-    print('strTime',strTime)
+    # print('strTime',strTime)
     return strTime
 
 @connect_sql()
@@ -867,8 +868,9 @@ def post_available_room(cursor):
 
                 result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'room')
                 result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'room')
-                # print('one_id',result_one_id)
-                # print('email',result_email)
+                send_json_chatme(oneid, row, date, rid, 'booking', 'booking')
+
+
                 return jsonify({"message": "Insert Success"})
             else:
                 return jsonify({"message": "one id error"}), 500
@@ -934,8 +936,7 @@ def post_available_vehicle(cursor):
 
                 result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'vehicle')
                 result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'vehicle')
-                print('one_id',result_one_id)
-                print('email',result_email)
+                send_json_chatme(oneid, row, date, rid, 'vehicle', 'booking')
 
                 return jsonify({"message": "Insert Success"})
             else:

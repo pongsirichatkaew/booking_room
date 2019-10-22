@@ -1,5 +1,6 @@
 from Config.config import *
 from send_message import *
+from chatme_api import *
 from booking import *
 import ast
 import datetime
@@ -203,6 +204,7 @@ def booking_delete(cursor):
             # fullname = name.split('.')
             discard_room_email(row, date_time, name, rid, email)
             discard_to_oneid(row, date_time, name, rid, oneid)
+            send_json_chatme(oneid, row, date_time, rid, 'booking', 'cancel')
             return jsonify({"message": "success", "data": { "result": result[0]['trid_num']}}), 200
     except Exception as e:
         print('error ===', e)
@@ -353,6 +355,7 @@ def booking_delete_vehicle(cursor):
             # fullname = name.split('.')
             discard_room_email(row, date_time, name, rid, email)
             discard_to_oneid(row, date_time, name, rid, oneid)
+            send_json_chatme(oneid, row, date_time, rid, 'vehicle', 'cancel')
             return jsonify({"message": "success", "data": { "result": result[0]['trid_num']}}), 200
     except Exception as e:
         print('error ===', e)

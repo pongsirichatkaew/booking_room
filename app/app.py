@@ -2,6 +2,7 @@ from Config.config import *
 from booking import *
 from booking_time import *
 from send_message import *
+from chatme_api import *
 from discard import *
 from confirm import *
 
