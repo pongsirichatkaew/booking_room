@@ -64,8 +64,17 @@ def confirmWebView(cursor):
                             }
                         ]
                     }
+                    push_message = {
+                        "to" : res['oneid'],
+                        "bot_id" : botid,
+                        "type" : "text",
+                        "message" : "กรุณาคลิกที่ลิงค์เพื่อยืนยันการใช้งานห้องประชุมและรถตู้ในวันที่ {}".format(res['date'])
+                    }
+                    requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
+                                               headers={'Authorization': authorization}, json=push_message, timeout=(60 * 1)).json()
                     respone = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
                                                headers={'Authorization': authorization}, json=playload_msg, timeout=(60 * 1)).json()
+                    return ({"result": respone})
         else:
             return jsonify({"message": "Not found"})
         return jsonify({"result": respone})

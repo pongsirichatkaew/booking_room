@@ -768,7 +768,7 @@ def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,f
     send_msg_email += "</ul>"
     send_msg_email += "<br>"
 
-    send_msg_email += "หากต้องการยกเลิกหรือแก้ไข\n <a href='https://intranet.inet.co.th/index.php/MainController/bookingroom/'>คลิ้กที่นี่</a>"
+    # send_msg_email += "หากต้องการยกเลิกหรือแก้ไข\n <a href='https://intranet.inet.co.th/index.php/MainController/bookingroom/'>คลิ้กที่นี่</a>"
     server = "mailtx.inet.co.th"
     # server = "smtp.gmail.com"
     send_from = 'noreply.booking@inet.co.th'
