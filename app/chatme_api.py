@@ -6,8 +6,6 @@ import requests
 @connect_sql()
 def send_json_chatme(cursor, oneid, row, date, rid, webviewName, status_type):
     try:
-        current_app.logger.info("Chat ME API")
-
         ################ Chat ME API ####################
 
         room_sql = """SELECT rid,rname FROM room  WHERE rid = %s AND rstatus='show' """
@@ -47,8 +45,6 @@ def send_json_chatme(cursor, oneid, row, date, rid, webviewName, status_type):
 
             res = requests.request(
                 "POST", url="https://cmpoc05.chatme.co.th/banitim/TVSSCRAWLER3/ebiz/ebizpushmsgwebview.php", json=json_api, timeout=(60 * 1)).json()
-            current_app.logger.info(res)
-            current_app.logger.info(res['responseDesc'])
             if res['responseDesc'] == 'OK':
                 return jsonify({"status": "success"}), 200
             else:
