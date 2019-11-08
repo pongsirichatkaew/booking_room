@@ -36,7 +36,7 @@ def send_json_chatme(cursor, oneid, row, date, rid, webviewName, status_type):
                 "userId": userID,
                 "webviewName": webviewName,
                 "botId": botid,
-                "accessToken": "A18117d3ed0875eebb7fc1acb6e97d73e1417ec732bd64a22a0d6adb95b469d17856d1d53a8c8432398c2f4e1995dcb51",
+                "accessToken": "A62e8a53c57ec5330889b9f0f06e07e9cc5e82f556ae14b73acd9a53b758a5dddf8c22033ab5540788955425197bcac03",
                 "data": {
                     "type": status_type,
                     "date": date,
