@@ -183,12 +183,13 @@ def booking_delete(cursor):
             return jsonify({"message":"Missing JSON Request"}), 400
         else:
             data = request.json
+            print(data)
             date_time = data[0]['date']
             code = data[0]['code']
             rid = data[0]['rid']
             oneid = data[0]['oneid']
-            name = data[0]['name']
-            email = data[0]['email']
+            # name = data[0]['name']
+            # email = data[0]['email']
             # print(data)
             row = []
             for del_data in data:   
@@ -202,9 +203,9 @@ def booking_delete(cursor):
             result = toJson(cursor.fetchall(), columns)
             # print('row', row)
             # fullname = name.split('.')
-            discard_room_email(row, date_time, name, rid, email)
-            discard_to_oneid(row, date_time, name, rid, oneid)
-            send_json_chatme(oneid, row, date_time, rid, 'booking', 'cancel')
+            # discard_room_email(row, date_time, name, rid, email)
+            # discard_to_oneid(row, date_time, name, rid, oneid)
+            # send_json_chatme(oneid, row, date_time, rid, 'booking', 'cancel')
             return jsonify({"message": "success", "data": { "result": result[0]['trid_num']}}), 200
     except Exception as e:
         print('error ===', e)

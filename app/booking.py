@@ -85,7 +85,8 @@ def get_ticket_room(cursor):
         if not request.is_json:
             return jsonify({"message": "Missing JSON in request"}), 400
         else:
-            date = request.json.get('date', None) #รับค่า date ฝดดยตรง ถ้าไม่มีมีค่าเป็น Null
+            # รับค่า date ฝดดยตรง ถ้าไม่มีมีค่าเป็น Null
+            date = request.json.get('date', None)
             room_id = request.json.get('rid', None)
             if not date:
                 return jsonify({"message": "Missing parameter"}), 400
@@ -181,7 +182,7 @@ def get_available_ticket_room(cursor):
                     hours = dateTimeNow.strftime("%H")
                     day = dateTimeNow.strftime("%Y-%m-%d")
 
-                                # print(date.strftime("%H"))
+                    # print(date.strftime("%H"))
                     for t in list(my_time):
                         for time in alltime:
                             if(t == time['time']):
@@ -192,12 +193,14 @@ def get_available_ticket_room(cursor):
                                 else:
                                     timeSpilt3 = timeSplit[0].split(' ')
                                     timeSplit2 = timeSpilt3[1]
-                                
+
                                 if date > day:
-                                    list_time.append({"row": time['row'], "time": time['time']})
+                                    list_time.append(
+                                        {"row": time['row'], "time": time['time']})
                                 else:
                                     if int(timeSplit2) >= int(hours):
-                                        list_time.append({"row": time['row'], "time": time['time']})
+                                        list_time.append(
+                                            {"row": time['row'], "time": time['time']})
                                     break
 
                     list_time.sort(key=extract_time, reverse=False)
@@ -264,6 +267,7 @@ def get_available_ticket_room(cursor):
                 else:
                     return jsonify({"message": "room_id is invalid"}), 400
     except Exception as e:
+        print(str(e))
         current_app.logger.info(e)
         return jsonify({"message": str(e)}), 500
 
@@ -347,11 +351,13 @@ def get_available_vehicle_room(cursor):
                                     timeSpilt3 = timeSplit[0].split(' ')
                                     timeSplit2 = timeSpilt3[1]
                                 if date > day:
-                                    list_time.append({"row": time['row'], "time": time['time']})
+                                    list_time.append(
+                                        {"row": time['row'], "time": time['time']})
                                 else:
                                     if int(timeSplit2) >= int(hours):
-                                        list_time.append({"row": time['row'], "time": time['time']})
-                                    break 
+                                        list_time.append(
+                                            {"row": time['row'], "time": time['time']})
+                                    break
 
                     list_time.sort(key=extract_time, reverse=False)
                     jsonResult.update({"times": list_time})
@@ -505,18 +511,20 @@ def get_available_projector(cursor):
                         for time in alltime:
                             if(t == time['time']):
                                 timeSplit = time['time'].split(".")
-                                        # print(timeSplit)
+                                # print(timeSplit)
                                 if len(timeSplit) > 2:
                                     timeSplit2 = timeSplit[0]
                                 else:
                                     timeSpilt3 = timeSplit[0].split(' ')
                                     timeSplit2 = timeSpilt3[1]
-                                        
+
                                 if date > day:
-                                    list_time.append({"row": time['row'], "time": time['time']})
+                                    list_time.append(
+                                        {"row": time['row'], "time": time['time']})
                                 else:
                                     if int(timeSplit2) >= int(hours):
-                                        list_time.append({"row": time['row'], "time": time['time']})
+                                        list_time.append(
+                                            {"row": time['row'], "time": time['time']})
                                     break
 
                     list_time.sort(key=extract_time, reverse=False)
@@ -601,8 +609,9 @@ def get_available_projector(cursor):
         current_app.logger.info(e)
         return jsonify({"message": str(e)}), 500
 
+
 @connect_sql()
-def timeMerge(cursor,row):
+def timeMerge(cursor, row):
     sql_all_time = """ SELECT row,time from time """
     cursor.execute(sql_all_time)
     columns = [column[0] for column in cursor.description]
@@ -631,7 +640,8 @@ def timeMerge(cursor,row):
                     if(i+1 < len(row)):
                         if(times[index+1]['row'] == row[i+1]):
                             if(len(times[index + 1]['time'].split('-')) > 1):
-                                strSecond = times[index +1]['time'].split('-')[1]
+                                strSecond = times[index +
+                                                  1]['time'].split('-')[1]
                         else:
                             strTime = strTime + strFirst + "-" + strSecond + ",\n"
                 else:
@@ -644,8 +654,9 @@ def timeMerge(cursor,row):
     # print('strTime',strTime)
     return strTime
 
+
 @connect_sql()
-def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,filter):
+def send_to_oneid(cursor, row, date, name, rid, oneid, description, numberofpeople, ps, filter):
     try:
         dateThai = nextDayThai(date)
         # bot_id = "B9f17b544628e5dfa8be224d00e759065"
@@ -655,7 +666,7 @@ def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,f
         send_to_email = ''
         send_to_oneid = ''
         user_id = ''
-        
+
         headerTitle = ''
         messageTitle = ''
         if(filter == 'room'):
@@ -668,12 +679,12 @@ def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,f
             headerTitle = 'อุปกรณ์'
             messageTitle = ''
 
-
         strTime = timeMerge(row)
 
         name_split = name.split('.')
-        send_msg_oneChat_title = """คุณ {} ได้จอง{} ในวันที่ {}\n""".format(name_split[1], headerTitle, dateThai)
-        
+        send_msg_oneChat_title = """คุณ {} ได้จอง{} ในวันที่ {}\n""".format(
+            name_split[1], headerTitle, dateThai)
+
         room = None
         ## Select Room Name ##
         if(filter == 'projector'):
@@ -687,38 +698,40 @@ def send_to_oneid(cursor,row,date,name,rid,oneid,description,numberofpeople,ps,f
             columns = [column[0] for column in cursor.description]
             room = toJson(cursor.fetchall(), columns)
 
-        send_msg_oneChat = """\n{}{} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{}""".format(messageTitle, room[0]['rname'], description, numberofpeople, ps, strTime)
+        send_msg_oneChat = """\n{}{} \nเหตุผล: {}\nจำนวนคน: {} \nหมายเหตุ: {} \n เวลา:\n{}""".format(
+            messageTitle, room[0]['rname'], description, numberofpeople, ps, strTime)
 
         payload = {
-                "bot_id": bot_id,
-                "key_search": oneid
-            }
+            "bot_id": bot_id,
+            "key_search": oneid
+        }
 
         # GET user_id
         response = requests.request("POST", url="https://chat-manage.one.th:8997/api/v1/searchfriend",
-                                                    headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
+                                    headers={'Authorization': tokenBot}, json=payload, timeout=(60 * 1)).json()
         if response['status'] != 'fail':
             user_id = response['friend']['user_id']
 
         # Send One chat
-        payload_msg =  {
-                            "to" : user_id,
-                            "bot_id" : bot_id,
-                            "type" : "text",
-                            "message" : send_msg_oneChat_title + send_msg_oneChat
-                        }
+        payload_msg = {
+            "to": user_id,
+            "bot_id": bot_id,
+            "type": "text",
+            "message": send_msg_oneChat_title + send_msg_oneChat
+        }
         send_type = 'one_id'
         dateTime = datetime.datetime.now()
         response_msg = requests.request("POST", url="https://chat-public.one.th:8034/api/v1/push_message",
-        headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
+                                        headers={'Authorization': tokenBot}, json=payload_msg, timeout=(60 * 1)).json()
         return response_msg
     except Exception as e:
         print('error ===', e)
         current_app.logger.info(e)
         return jsonify(str(e))
 
+
 @connect_sql()
-def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,filter):
+def send_to_email(cursor, row, date, name, rid, description, numberofpeople, ps, email, filter):
     dateThai = nextDayThai(date)
     name_split = name.split('.')
     strTime = timeMerge(row)
@@ -748,8 +761,8 @@ def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,f
         messageTitle = ''
 
     send_msg_title = "พรุ่งนี้วันที่ " + dateThai + " คุณ " + \
-    name_split[1] + " ได้ทำการจอง" + \
-    headerTitle + " ดังนี้ <br><br>"
+        name_split[1] + " ได้ทำการจอง" + \
+        headerTitle + " ดังนี้ <br><br>"
     send_msg_email = ''
     timeSelec = 'เวลา: <br>'
     # timeSelec += '<ul style="padding-left: 15px;">'
@@ -811,6 +824,7 @@ def send_to_email(cursor,row,date,name,rid,description,numberofpeople,ps,email,f
         #     sql, (send_to_email, send_to_oneid, send_type, response, dateTime))
     return response
 
+
 @app.route('/api/v1/insert_room', methods=['POST'])
 @connect_sql()
 def post_available_room(cursor):
@@ -818,6 +832,7 @@ def post_available_room(cursor):
         if not request.is_json:
             return jsonify({"message": "Missing JSON in request"}), 400
         else:
+            print(request.json)
             col = request.json.get('col', None)
             code = request.json.get('code', None)
             date = request.json.get('date', None)
@@ -833,9 +848,9 @@ def post_available_room(cursor):
             row = request.json.get('row', None)
             if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not rid or not row:
                 return jsonify({"message": "Missing parameter"}), 400
-
             response = requests.get(
                 'https://chat-develop.one.th:8007/checkStaff/'+code+'/'+oneid)
+            print(response)
             if response:
                 raw = response.text
                 raw = json.loads(raw)
@@ -866,10 +881,11 @@ def post_available_room(cursor):
                     # print(sql)
                     cursor.execute(sql)
 
-                result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'room')
-                result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'room')
-                send_json_chatme(oneid, row, date, rid, 'booking', 'booking')
-
+                # result_one_id = send_to_oneid(
+                #     row, date, name, rid, oneid, description, numberofpeople, ps, 'room')
+                # result_email = send_to_email(
+                #     row, date, name, rid, description, numberofpeople, ps, email, 'room')
+                # send_json_chatme(oneid, row, date, rid, 'booking', 'booking')
 
                 return jsonify({"message": "Insert Success"})
             else:
@@ -934,8 +950,10 @@ def post_available_vehicle(cursor):
                     # print(sql)
                     cursor.execute(sql)
 
-                result_one_id = send_to_oneid(row,date,name,rid,oneid,description,numberofpeople,ps,'vehicle')
-                result_email = send_to_email(row,date,name,rid,description,numberofpeople,ps,email,'vehicle')
+                result_one_id = send_to_oneid(
+                    row, date, name, rid, oneid, description, numberofpeople, ps, 'vehicle')
+                result_email = send_to_email(
+                    row, date, name, rid, description, numberofpeople, ps, email, 'vehicle')
                 send_json_chatme(oneid, row, date, rid, 'vehicle', 'booking')
 
                 return jsonify({"message": "Insert Success"})
@@ -966,10 +984,9 @@ def post_available_projector(cursor):
             ps = request.json.get('ps', None)
             pid = request.json.get('pid', None)
 
-
             row = request.json.get('row', None)
             newRow = list(map(int, row))
-            print('newRow',newRow)
+            print('newRow', newRow)
             if not col or not code or not date or not department or not description or not email or not name or not numberofpeople or not oneid or not pid or not row:
                 return jsonify({"message": "Missing parameter"}), 400
 
@@ -1004,9 +1021,10 @@ def post_available_projector(cursor):
                     # print(sql)
                     cursor.execute(sql)
 
-                result_one_id = send_to_oneid(newRow,date,name,pid,oneid,description,numberofpeople,ps,'projector')
-                result_email = send_to_email(newRow,date,name,pid,description,numberofpeople,ps,email,'projector')
-
+                result_one_id = send_to_oneid(
+                    newRow, date, name, pid, oneid, description, numberofpeople, ps, 'projector')
+                result_email = send_to_email(
+                    newRow, date, name, pid, description, numberofpeople, ps, email, 'projector')
 
                 return jsonify({"message": "Insert Success"})
             else:
